@@ -1,0 +1,186 @@
+
+/* ===========================================
+   FOOTER STYLES
+=========================================== */
+
+.site-footer {
+  background-color: #1a1c1e;
+  color: #b0b5bc;
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+  padding-top: 50px;
+  margin-top: 60px;
+  border-top: 4px solid #ff6600;
+}
+
+.footer-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 20px 40px;
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 1.2fr;
+  gap: 32px;
+}
+
+/* Column General Styling */
+.footer-col h4.footer-heading {
+  color: #ffffff;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 20px 0;
+  position: relative;
+  padding-bottom: 8px;
+}
+
+.footer-col h4.footer-heading::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 35px;
+  height: 2px;
+  background-color: #ff6600;
+}
+
+/* Brand Column */
+.footer-logo {
+  color: #ffffff;
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0 0 12px 0;
+  letter-spacing: 0.5px;
+}
+
+.footer-logo span {
+  color: #ff6600;
+}
+
+.brand-desc {
+  font-size: 0.88rem;
+  line-height: 1.6;
+  margin-bottom: 20px;
+  color: #a0a5ad;
+}
+
+/* Social Icons */
+.social-links {
+  display: flex;
+  gap: 10px;
+}
+
+.social-icon {
+  width: 36px;
+  height: 36px;
+  background-color: #282b2e;
+  color: #ffffff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.25s ease;
+  text-decoration: none;
+}
+
+.social-icon:hover {
+  background-color: #ff6600;
+  transform: translateY(-3px);
+  color: #ffffff;
+}
+
+/* Footer Links */
+.footer-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-links li {
+  margin-bottom: 10px;
+}
+
+.footer-links a {
+  color: #b0b5bc;
+  text-decoration: none;
+  font-size: 0.88rem;
+  transition: color 0.2s ease, padding-left 0.2s ease;
+  display: inline-block;
+}
+
+.footer-links a:hover {
+  color: #ff6600;
+  padding-left: 5px;
+}
+
+/* Contact Info List */
+.contact-info {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.contact-info li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.88rem;
+  margin-bottom: 12px;
+  color: #b0b5bc;
+}
+
+.contact-info svg {
+  color: #ff6600;
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+
+/* Footer Bottom Bar */
+.footer-bottom {
+  background-color: #121315;
+  border-top: 1px solid #282b2e;
+  padding: 18px 20px;
+}
+
+.footer-bottom-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 0.85rem;
+  color: #888d96;
+}
+
+.footer-bottom-container strong {
+  color: #d1d5db;
+}
+
+.developer-credit {
+  margin: 0;
+}
+
+.dev-name {
+  color: #ff6600;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+/* Responsive Footer Setup */
+@media (max-width: 992px) {
+  .footer-container {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 30px;
+  }
+}
+
+@media (max-width: 576px) {
+  .footer-container {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .footer-bottom-container {
+    flex-direction: column;
+    text-align: center;
+  }
+}

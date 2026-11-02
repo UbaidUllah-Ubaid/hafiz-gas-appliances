@@ -1,0 +1,321 @@
+<div class="products-page">
+
+  <div class="page-header">
+    <div>
+      <h1>Manage Products</h1>
+      <p>Apne store ke products view aur update karein.</p>
+    </div>
+
+    <button class="refresh-btn" (click)="loadProducts()" [disabled]="loading">
+      ↻ Refresh
+    </button>
+  </div>
+
+  @if (success) {
+    <div class="alert success-alert">{{ success }}</div>
+  }
+
+  @if (error && !editing) {
+    <div class="alert error-alert">{{ error }}</div>
+  }
+
+  @if (loading) {
+    <div class="loading-state">Products load ho rahe hain...</div>
+  }
+
+  @if (!loading && products.length === 0) {
+    <div class="empty-state">Abhi koi product available nahi hai.</div>
+  }
+
+  <div class="products-grid">
+    @for (product of products; track product.id) {
+      <div class="product-card">
+
+        <div class="product-image">
+          <img
+            [src]="imageUrl(product.image_url || product.images?.[0])"
+            [alt]="product.title"
+          />
+          <span
+            class="status"
+            [class.published]="product.is_published"
+          >
+            {{ product.is_published ? 'Published' : 'Draft' }}
+          </span>
+        </div>
+
+        <div class="product-info">
+          <span class="category">{{ product.category }}</span>
+          <h3>{{ product.title }}</h3>
+          <p class="sku">SKU: {{ product.sku }}</p>
+
+          <div class="product-meta">
+            <strong>Rs. {{ product.price | number }}</strong>
+            <span>Stock: {{ product.stock }}</span>
+          </div>
+
+          <div class="card-actions">
+            <button
+              class="edit-btn"
+              type="button"
+              (click)="startEdit(product)"
+            >
+              Edit Product
+            </button>
+
+            <button
+              class="delete-btn"
+              type="button"
+              (click)="deleteProduct(product)"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+
+      </div>
+    }
+  </div>
+</div>
+
+@if (editing) {
+  <div class="modal-overlay" (click)="cancelEdit()">
+
+    <div
+      class="edit-modal"
+      (click)="$event.stopPropagation()"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="editProductTitle"
+    >
+
+      <div class="modal-header">
+        <div>
+          <h2 id="editProductTitle">Edit Product</h2>
+          <p>Product ki details update karein.</p>
+        </div>
+
+        <button
+          type="button"
+          class="close-btn"
+          (click)="cancelEdit()"
+          [disabled]="saving"
+        >
+          ×
+        </button>
+      </div>
+
+      @if (error) {
+        <div class="alert error-alert">{{ error }}</div>
+      }
+
+      <form (ngSubmit)="saveProduct()">
+
+        <div class="form-grid">
+
+          <div class="form-group">
+            <label>Product Title *</label>
+            <input
+              type="text"
+              name="title"
+              [(ngModel)]="editForm.title"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label>SKU *</label>
+            <input
+              type="text"
+              name="sku"
+              [(ngModel)]="editForm.sku"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Price (PKR) *</label>
+            <input
+              type="number"
+              name="price"
+              min="1"
+              [(ngModel)]="editForm.price"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Stock *</label>
+            <input
+              type="number"
+              name="stock"
+              min="0"
+              step="1"
+              [(ngModel)]="editForm.stock"
+              required
+            />
+          </div>
+
+          <div class="form-group full-width">
+            <label>Category *</label>
+            <input
+              type="text"
+              name="category"
+              [(ngModel)]="editForm.category"
+              required
+            />
+          </div>
+
+          <div class="form-group full-width">
+            <label>Description *</label>
+            <textarea
+              name="description"
+              rows="4"
+              [(ngModel)]="editForm.description"
+              required
+            ></textarea>
+          </div>
+
+          <div class="form-group full-width">
+            <label>Product Images</label>
+
+            <div class="image-preview-grid">
+
+              @for (image of editForm.images; track $index) {
+                <div class="preview-item">
+                  <img [src]="imageUrl(image)" alt="Product image" />
+
+                  <button
+                    type="button"
+                    class="remove-image"
+                    (click)="removeExistingImage($index)"
+                  >
+                    ×
+                  </button>
+                </div>
+              }
+
+              @for (preview of imagePreviews; track $index) {
+                <div class="preview-item">
+                  <img [src]="preview" alt="New image preview" />
+
+                  <button
+                    type="button"
+                    class="remove-image"
+                    (click)="removeNewImage($index)"
+                  >
+                    ×
+                  </button>
+                </div>
+              }
+
+            </div>
+
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              multiple
+              (change)="onImagesSelected($event)"
+            />
+
+            <small>Maximum 10 images, each up to 5MB.</small>
+          </div>
+
+          <div class="form-group full-width">
+            <div class="section-heading">
+              <label>Product Options / Variations</label>
+
+              <button
+                type="button"
+                class="add-option-btn"
+                (click)="addOption()"
+              >
+                + Add Option
+              </button>
+            </div>
+
+            @if (editForm.options.length === 0) {
+              <p class="no-options">Is product ke liye koi option nahi hai.</p>
+            }
+
+            @for (option of editForm.options; track $index) {
+              <div class="option-row">
+
+                <select
+                  [name]="'optionGroup' + $index"
+                  [(ngModel)]="option.option_group"
+                >
+                  <option value="Color">Color</option>
+                  <option value="Gas Type">Gas Type</option>
+                  <option value="Size">Size</option>
+                </select>
+
+                <input
+                  type="text"
+                  [name]="'optionValue' + $index"
+                  placeholder="Option value"
+                  [(ngModel)]="option.option_value"
+                />
+
+                <input
+                  type="number"
+                  [name]="'optionPrice' + $index"
+                  min="0"
+                  placeholder="Extra price"
+                  [(ngModel)]="option.extra_price"
+                />
+
+                <button
+                  type="button"
+                  class="remove-option-btn"
+                  (click)="removeOption($index)"
+                >
+                  ×
+                </button>
+
+              </div>
+            }
+          </div>
+
+          <div class="form-group full-width publish-row">
+            <label class="checkbox-label">
+              <input
+                type="checkbox"
+                name="published"
+                [(ngModel)]="editForm.is_published"
+              />
+              Publish this product
+            </label>
+          </div>
+
+        </div>
+
+        <div class="modal-actions">
+          <button
+            type="button"
+            class="cancel-btn"
+            (click)="cancelEdit()"
+            [disabled]="saving"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            class="save-btn"
+            [disabled]="saving"
+          >
+            @if (uploading) {
+              Uploading Images...
+            } @else if (saving) {
+              Updating...
+            } @else {
+              Update Product
+            }
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+}

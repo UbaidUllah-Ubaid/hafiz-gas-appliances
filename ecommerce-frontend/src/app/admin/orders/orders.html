@@ -1,0 +1,252 @@
+<div class="orders-page">
+  <div class="orders-container">
+
+    <header class="page-header">
+      <div>
+        <p class="eyebrow">HAFIZ GAS APPLIANCES</p>
+        <h1>Customer Orders</h1>
+        <p class="subtitle">
+          Review customer orders and update their status.
+        </p>
+      </div>
+
+      <button
+        type="button"
+        class="refresh-button"
+        (click)="loadOrders()"
+        [disabled]="loading || updatingOrderId !== null">
+        ↻ Refresh Orders
+      </button>
+    </header>
+
+    <div class="summary-grid">
+      <div class="summary-card">
+        <span>Total Orders</span>
+        <strong>{{ orders.length }}</strong>
+      </div>
+
+      <div class="summary-card pending-summary">
+        <span>Pending</span>
+        <strong>{{ pendingOrders.length }}</strong>
+      </div>
+
+      <div class="summary-card confirmed-summary">
+        <span>Confirmed / Processing</span>
+        <strong>{{ confirmedOrders.length }}</strong>
+      </div>
+
+      <div class="summary-card completed-summary">
+        <span>Delivered / Cancelled</span>
+        <strong>{{ completedOrders.length }}</strong>
+      </div>
+    </div>
+
+    @if (successMessage) {
+      <div class="alert success-alert" role="status">
+        {{ successMessage }}
+      </div>
+    }
+
+    @if (errorMessage) {
+      <div class="alert error-alert" role="alert">
+        {{ errorMessage }}
+        <button type="button" (click)="loadOrders()">Try Again</button>
+      </div>
+    }
+
+    @if (loading) {
+      <div class="message-panel">
+        <div class="loader"></div>
+        <p>Loading customer orders...</p>
+      </div>
+    } @else if (!errorMessage && orders.length === 0) {
+      <div class="message-panel">
+        <div class="empty-icon">📦</div>
+        <h2>No orders found</h2>
+        <p>Customer orders will appear here when available.</p>
+      </div>
+    } @else if (!errorMessage) {
+
+      <section class="orders-section">
+        <div class="section-heading">
+          <div>
+            <h2>Pending Orders</h2>
+            <p>New orders waiting for confirmation.</p>
+          </div>
+          <span class="count-badge">{{ pendingOrders.length }}</span>
+        </div>
+
+        @if (pendingOrders.length === 0) {
+          <div class="small-empty">No pending orders.</div>
+        }
+
+        @for (order of pendingOrders; track order.id) {
+          <article class="order-card">
+            <div class="order-header">
+              <div>
+                <span class="order-number">Order #{{ order.id }}</span>
+                <p class="order-date">{{ formatDate(order.created_at) }}</p>
+              </div>
+              <span class="status-badge pending">Pending</span>
+            </div>
+
+            <div class="customer-details">
+              <h3>Customer Details</h3>
+              <p><strong>Name:</strong> {{ order.customer_name || 'Not provided' }}</p>
+              <p><strong>Phone:</strong> {{ order.customer_phone || 'Not provided' }}</p>
+              <p><strong>Email:</strong> {{ order.customer_email || 'Not provided' }}</p>
+              <p><strong>Address:</strong> {{ order.shipping_address || 'Not provided' }}</p>
+            </div>
+
+            <div class="products-heading">Ordered Products</div>
+
+            @for (item of order.items; track $index) {
+              <div class="product-row">
+                <div>
+                  <strong>{{ getProductName(item) }}</strong>
+                  <span>Quantity: {{ item.quantity || 1 }}</span>
+
+                  @if (item.selected_options && (Object.keys(item.selected_options).length > 0)) {
+                    <span class="options-text">
+                      Options:
+                      @for (option of (item.selected_options | keyvalue); track option.key) {
+                        {{ option.key }}: {{ option.value }}{{ !$last ? ', ' : '' }}
+                      }
+                    </span>
+                  }
+                </div>
+
+                <span class="price">
+                  Rs. {{ formatPrice((item.unit_price || 0) * (item.quantity || 1)) }}
+                </span>
+              </div>
+            }
+
+            <div class="order-footer">
+              <div>
+                <span class="total-label">Order Total</span>
+                <strong class="order-total">Rs. {{ formatPrice(order.total_price) }}</strong>
+              </div>
+
+              <button
+                type="button"
+                class="action-button confirm-button"
+                (click)="updateStatus(order, 'confirmed')"
+                [disabled]="updatingOrderId !== null">
+                {{ updatingOrderId === order.id ? 'Updating...' : '✓ Confirm Order' }}
+              </button>
+            </div>
+          </article>
+        }
+      </section>
+
+      <section class="orders-section">
+        <div class="section-heading">
+          <div>
+            <h2>Confirmed / Processing Orders</h2>
+            <p>Orders awaiting delivery confirmation.</p>
+          </div>
+          <span class="count-badge confirmed-count">{{ confirmedOrders.length }}</span>
+        </div>
+
+        @if (confirmedOrders.length === 0) {
+          <div class="small-empty">No confirmed orders.</div>
+        }
+
+        @for (order of confirmedOrders; track order.id) {
+          <article class="order-card">
+            <div class="order-header">
+              <div>
+                <span class="order-number">Order #{{ order.id }}</span>
+                <p class="order-date">{{ formatDate(order.created_at) }}</p>
+              </div>
+              <span class="status-badge confirmed">
+                {{ order.status | titlecase }}
+              </span>
+            </div>
+
+            <div class="customer-details">
+              <h3>Customer Details</h3>
+              <p><strong>Name:</strong> {{ order.customer_name || 'Not provided' }}</p>
+              <p><strong>Phone:</strong> {{ order.customer_phone || 'Not provided' }}</p>
+              <p><strong>Email:</strong> {{ order.customer_email || 'Not provided' }}</p>
+              <p><strong>Address:</strong> {{ order.shipping_address || 'Not provided' }}</p>
+            </div>
+
+            <div class="products-heading">Ordered Products</div>
+
+            @for (item of order.items; track $index) {
+              <div class="product-row">
+                <div>
+                  <strong>{{ getProductName(item) }}</strong>
+                  <span>Quantity: {{ item.quantity || 1 }}</span>
+                </div>
+
+                <span class="price">
+                  Rs. {{ formatPrice((item.unit_price || 0) * (item.quantity || 1)) }}
+                </span>
+              </div>
+            }
+
+            <div class="order-footer">
+              <div>
+                <span class="total-label">Order Total</span>
+                <strong class="order-total">Rs. {{ formatPrice(order.total_price) }}</strong>
+              </div>
+
+              <button
+                type="button"
+                class="action-button received-button"
+                (click)="updateStatus(order, 'delivered')"
+                [disabled]="updatingOrderId !== null">
+                {{ updatingOrderId === order.id ? 'Updating...' : '✓ Mark as Received' }}
+              </button>
+            </div>
+          </article>
+        }
+      </section>
+
+      <section class="orders-section">
+        <div class="section-heading">
+          <div>
+            <h2>Completed / Cancelled Orders</h2>
+            <p>Previously delivered or cancelled orders.</p>
+          </div>
+          <span class="count-badge">{{ completedOrders.length }}</span>
+        </div>
+
+        @if (completedOrders.length === 0) {
+          <div class="small-empty">No completed or cancelled orders.</div>
+        }
+
+        @for (order of completedOrders; track order.id) {
+          <article class="order-card compact-card">
+            <div class="order-header">
+              <div>
+                <span class="order-number">Order #{{ order.id }}</span>
+                <p class="order-date">{{ formatDate(order.created_at) }}</p>
+              </div>
+              <span
+                class="status-badge"
+                [ngClass]="order.status === 'delivered' ? 'received' : 'cancelled'">
+                {{ order.status | titlecase }}
+              </span>
+            </div>
+
+            <div class="customer-details">
+              <p><strong>Customer:</strong> {{ order.customer_name || 'Not provided' }}</p>
+              <p><strong>Phone:</strong> {{ order.customer_phone || 'Not provided' }}</p>
+            </div>
+
+            <div class="order-footer">
+              <div>
+                <span class="total-label">Order Total</span>
+                <strong class="order-total">Rs. {{ formatPrice(order.total_price) }}</strong>
+              </div>
+            </div>
+          </article>
+        }
+      </section>
+    }
+  </div>
+</div>

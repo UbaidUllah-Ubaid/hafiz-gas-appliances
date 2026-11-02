@@ -1,0 +1,141 @@
+<div class="contact-page">
+
+  <section class="contact-hero">
+    <div class="hero-content">
+      <span class="eyebrow">WE ARE HERE TO HELP</span>
+
+      <h1>Let's Get In <span>Touch</span></h1>
+
+      <p>
+        Have questions about our gas appliances or need product information?
+        Contact our team directly. We're ready to help you.
+      </p>
+
+      <a href="#contact-options" class="hero-btn">
+        Contact Us <span>→</span>
+      </a>
+    </div>
+
+    <div class="hero-decoration">
+      <div class="decoration-circle">
+        <span>HG</span>
+      </div>
+      <div class="decoration-small"></div>
+    </div>
+  </section>
+
+  <section class="contact-section" id="contact-options">
+
+    <div class="section-heading">
+      <span class="eyebrow">GET CONNECTED</span>
+      <h2>Contact <span>Our Team</span></h2>
+      <p>Choose your preferred way to contact us.</p>
+    </div>
+
+    <div class="contact-grid">
+
+      @for (contact of contacts; track contact.number; let i = $index) {
+        <a
+          class="contact-card whatsapp-card"
+          [href]="contact.whatsappUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <div class="card-top">
+            <div class="contact-icon whatsapp-icon">
+              <span>✆</span>
+            </div>
+            <span class="card-arrow">↗</span>
+          </div>
+
+          <div class="card-info">
+            <span class="card-label">{{ contact.label }}</span>
+            <h3>{{ contact.display }}</h3>
+            <p>Chat with us on WhatsApp</p>
+          </div>
+
+          <div class="card-bottom">
+            <span>Open WhatsApp</span>
+            <span>→</span>
+          </div>
+        </a>
+      }
+
+      <a
+        class="contact-card email-card"
+        [href]="'mailto:' + email"
+      >
+        <div class="card-top">
+          <div class="contact-icon email-icon">
+            <span>✉</span>
+          </div>
+          <span class="card-arrow">↗</span>
+        </div>
+
+        <div class="card-info">
+          <span class="card-label">EMAIL ADDRESS</span>
+          <h3 class="email-address">{{ email }}</h3>
+          <p>Send us an email directly</p>
+        </div>
+
+        <div class="card-bottom">
+          <span>Send Email</span>
+          <span>→</span>
+        </div>
+      </a>
+
+    </div>
+  </section>
+
+  <section class="social-section">
+    <div class="social-content">
+      <span class="eyebrow">FOLLOW OUR JOURNEY</span>
+      <h2>Stay Connected <span>With Us</span></h2>
+      <p>
+        Follow Hafiz Gas Appliances on social media
+        to explore our products and latest updates.
+      </p>
+    </div>
+
+    <div class="social-links">
+
+      <a
+        [href]="facebookUrl"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="social-card facebook"
+      >
+        <span class="social-symbol">f</span>
+        <span>
+          <strong>Facebook</strong>
+          <small>Follow our page</small>
+        </span>
+        <span class="social-arrow">↗</span>
+      </a>
+
+      <a
+        [href]="tiktokUrl"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="social-card tiktok"
+      >
+        <span class="social-symbol">♪</span>
+        <span>
+          <strong>TikTok</strong>
+          <small>Watch our videos</small>
+        </span>
+        <span class="social-arrow">↗</span>
+      </a>
+
+    </div>
+  </section>
+
+  <section class="contact-footer">
+    <div class="footer-mark">HG</div>
+    <div>
+      <h3>HAFIZ GAS APPLIANCES</h3>
+      <p>Quality Appliances. Reliable Service.</p>
+    </div>
+  </section>
+
+</div>

@@ -1,0 +1,169 @@
+<div class="profile-page">
+
+  <div class="page-header">
+    <div>
+      <span class="eyebrow">MY ACCOUNT</span>
+      <h1>My Profile</h1>
+      <p>Manage your personal information and account details.</p>
+    </div>
+  </div>
+
+  @if (loading) {
+    <div class="status-card">
+      <div class="loader"></div>
+      <p>Loading your profile...</p>
+    </div>
+  } @else if (errorMessage && !profile.id) {
+    <div class="message error">{{ errorMessage }}</div>
+    <button class="primary-btn" (click)="loadProfile()">Try Again</button>
+  } @else {
+
+    <div class="profile-card">
+
+      <div class="profile-top">
+        <div class="avatar">{{ initials || 'U' }}</div>
+
+        <div class="user-heading">
+          <h2>{{ profile.name }}</h2>
+          <p>{{ profile.email }}</p>
+          <span class="role-badge">{{ profile.role }}</span>
+        </div>
+
+        @if (!editing) {
+          <button class="edit-btn" (click)="startEditing()">
+            <span>✎</span> Edit Profile
+          </button>
+        }
+      </div>
+
+      <div class="card-divider"></div>
+
+      <div class="section-heading">
+        <div>
+          <h3>Personal Information</h3>
+          <p>Your account information</p>
+        </div>
+      </div>
+
+      @if (successMessage) {
+        <div class="message success">{{ successMessage }}</div>
+      }
+
+      @if (errorMessage) {
+        <div class="message error">{{ errorMessage }}</div>
+      }
+
+      @if (editing) {
+
+        <form (ngSubmit)="saveProfile()" class="profile-form">
+
+          <div class="form-group">
+            <label for="name">Full Name</label>
+            <input
+              id="name"
+              type="text"
+              name="name"
+              [(ngModel)]="editForm.name"
+              maxlength="100"
+              required
+              placeholder="Enter your full name"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email Address</label>
+            <input
+              id="email"
+              type="email"
+              [value]="profile.email"
+              disabled
+            />
+            <small>Email address cannot be changed here.</small>
+          </div>
+
+          <div class="form-group">
+            <label for="phone">Phone Number</label>
+            <input
+              id="phone"
+              type="tel"
+              name="phone"
+              [(ngModel)]="editForm.phone"
+              maxlength="30"
+              required
+              placeholder="Enter your phone number"
+            />
+          </div>
+
+          <div class="form-actions">
+            <button
+              type="button"
+              class="cancel-btn"
+              (click)="cancelEditing()"
+              [disabled]="saving"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              class="primary-btn"
+              [disabled]="saving"
+            >
+              {{ saving ? 'Saving...' : 'Save Changes' }}
+            </button>
+          </div>
+
+        </form>
+
+      } @else {
+
+        <div class="info-grid">
+
+          <div class="info-item">
+            <span class="info-icon">♙</span>
+            <div>
+              <label>Full Name</label>
+              <strong>{{ profile.name }}</strong>
+            </div>
+          </div>
+
+          <div class="info-item">
+            <span class="info-icon">✉</span>
+            <div>
+              <label>Email Address</label>
+              <strong>{{ profile.email }}</strong>
+            </div>
+          </div>
+
+          <div class="info-item">
+            <span class="info-icon">☎</span>
+            <div>
+              <label>Phone Number</label>
+              <strong>{{ profile.phone || 'Not provided' }}</strong>
+            </div>
+          </div>
+
+          <div class="info-item">
+            <span class="info-icon">♧</span>
+            <div>
+              <label>Account Type</label>
+              <strong>{{ profile.role }}</strong>
+            </div>
+          </div>
+
+        </div>
+      }
+
+    </div>
+
+    <div class="security-note">
+      <span class="security-icon">🔒</span>
+      <div>
+        <strong>Your account is protected</strong>
+        <p>Your personal information is only accessible through your authenticated account.</p>
+      </div>
+    </div>
+
+  }
+
+</div>

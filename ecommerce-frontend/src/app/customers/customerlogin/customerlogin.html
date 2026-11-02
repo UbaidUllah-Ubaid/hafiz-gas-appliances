@@ -1,0 +1,241 @@
+<div class="auth-page">
+  <div class="auth-card">
+
+    <a class="brand" routerLink="/">
+      <span class="brand-icon">H</span>
+      <span class="brand-name">
+        HAFIZ GAS <strong>APPLIANCES</strong>
+      </span>
+    </a>
+
+    <div class="heading">
+      <span class="eyebrow">
+        {{
+          mode === 'register' ? 'CREATE YOUR ACCOUNT' :
+          mode === 'forgot' ? 'PASSWORD RECOVERY' :
+          mode === 'verify-otp' ? 'EMAIL VERIFICATION' :
+          mode === 'reset' ? 'CREATE NEW PASSWORD' :
+          'WELCOME BACK'
+        }}
+      </span>
+
+      <h1>
+        {{
+          mode === 'register' ? 'Create Account' :
+          mode === 'forgot' ? 'Forgot Password?' :
+          mode === 'verify-otp' ? 'Verify OTP' :
+          mode === 'reset' ? 'Reset Password' :
+          'Customer Login'
+        }}
+      </h1>
+
+      <p>
+        {{
+          mode === 'register'
+            ? 'Join us to manage your orders and profile.'
+            : mode === 'forgot'
+              ? 'Enter your registered email to receive a password reset code.'
+              : mode === 'verify-otp'
+                ? 'Enter the 6-digit code sent to your email address.'
+                : mode === 'reset'
+                  ? 'Choose a new password for your account.'
+                  : 'Sign in to continue shopping with us.'
+        }}
+      </p>
+    </div>
+
+    <form (ngSubmit)="submitForm()" #authForm="ngForm">
+
+      <!-- Registration name -->
+      <div class="form-group" *ngIf="isRegister">
+        <label for="name">Full Name</label>
+        <input
+          id="name"
+          type="text"
+          name="name"
+          [(ngModel)]="name"
+          placeholder="Enter your full name"
+          maxlength="100"
+          autocomplete="name"
+          required
+        />
+      </div>
+
+      <!-- Email -->
+      <div class="form-group"
+        *ngIf="mode === 'login' || mode === 'register' || mode === 'forgot'">
+
+        <label for="email">Email Address</label>
+
+        <input
+          id="email"
+          type="email"
+          name="email"
+          [(ngModel)]="email"
+          [placeholder]="mode === 'forgot'
+            ? 'Enter your registered email address'
+            : 'you@example.com'"
+          maxlength="254"
+          autocomplete="email"
+          required
+        />
+
+        <div class="password-hint" *ngIf="mode === 'forgot'">
+          Please enter the same email address you used to register or log in to your account.
+        </div>
+      </div>
+
+      <!-- Phone -->
+      <div class="form-group" *ngIf="isRegister">
+        <label for="phone">Phone Number</label>
+        <input
+          id="phone"
+          type="tel"
+          name="phone"
+          [(ngModel)]="phone"
+          placeholder="Enter your phone number"
+          maxlength="30"
+          autocomplete="tel"
+          required
+        />
+      </div>
+
+      <!-- Login password -->
+      <div class="form-group" *ngIf="mode === 'login' || mode === 'register'">
+        <label for="password">Password</label>
+        <input
+          id="password"
+          type="password"
+          name="password"
+          [(ngModel)]="password"
+          placeholder="Enter your password"
+          [attr.minlength]="isRegister ? 8 : null"
+          [autocomplete]="isRegister ? 'new-password' : 'current-password'"
+          required
+        />
+
+        <div class="password-hint">
+          Password must be at least 8 characters.
+        </div>
+      </div>
+
+      <!-- OTP -->
+      <div class="form-group" *ngIf="mode === 'verify-otp'">
+        <label for="otp">6-Digit OTP</label>
+        <input
+          id="otp"
+          type="text"
+          name="otp"
+          [(ngModel)]="otp"
+          placeholder="Enter your 6-digit OTP"
+          inputmode="numeric"
+          pattern="[0-9]{6}"
+          maxlength="6"
+          autocomplete="one-time-code"
+          required
+        />
+      </div>
+
+      <!-- New password -->
+      <div class="form-group" *ngIf="mode === 'reset'">
+        <label for="password">New Password</label>
+        <input
+          id="password"
+          type="password"
+          name="password"
+          [(ngModel)]="password"
+          placeholder="Enter your new password"
+          minlength="8"
+          autocomplete="new-password"
+          required
+        />
+        <div class="password-hint">
+          Password must be at least 8 characters.
+        </div>
+      </div>
+
+      <!-- Confirm new password -->
+      <div class="form-group" *ngIf="mode === 'register' || mode === 'reset'">
+        <label for="confirmPassword">Confirm Password</label>
+        <input
+          id="confirmPassword"
+          type="password"
+          name="confirmPassword"
+          [(ngModel)]="confirmPassword"
+          placeholder="Enter your password again"
+          minlength="8"
+          autocomplete="new-password"
+          required
+        />
+      </div>
+
+      <!-- Messages -->
+      <div class="message error-message" *ngIf="errorMessage">
+        {{ errorMessage }}
+      </div>
+
+      <div class="message success-message" *ngIf="successMessage">
+        {{ successMessage }}
+      </div>
+
+      <!-- Submit button -->
+      <button
+        class="submit-button"
+        type="submit"
+        [disabled]="loading || !authForm.valid"
+      >
+        <span *ngIf="!loading">
+          {{
+            mode === 'register' ? 'CREATE ACCOUNT' :
+            mode === 'forgot' ? 'SEND RESET OTP' :
+            mode === 'verify-otp' ? 'VERIFY OTP' :
+            mode === 'reset' ? 'RESET PASSWORD' :
+            'SIGN IN'
+          }}
+        </span>
+
+        <span *ngIf="loading">PLEASE WAIT...</span>
+        <span class="button-arrow" *ngIf="!loading">→</span>
+      </button>
+
+    </form>
+
+    <!-- Forgot password link -->
+    <div class="switch-mode" *ngIf="mode === 'login'">
+      <button type="button" (click)="openForgotPassword()">
+        Forgot Password?
+      </button>
+    </div>
+
+    <!-- Resend OTP / Back to email -->
+    <div class="switch-mode" *ngIf="mode === 'verify-otp'">
+      <button type="button" (click)="sendResetOtp()" [disabled]="loading">
+        Resend OTP
+      </button>
+    </div>
+
+    <!-- Back to login -->
+    <div class="switch-mode" *ngIf="mode !== 'login'">
+      <button type="button" (click)="backToLogin()">
+        Back to Login
+      </button>
+    </div>
+
+    <!-- Register / Login switch -->
+    <div class="switch-mode" *ngIf="mode === 'login' || mode === 'register'">
+      <span>
+        {{ isRegister ? 'Already have an account?' : "Don't have an account?" }}
+      </span>
+
+      <button type="button" (click)="toggleMode()">
+        {{ isRegister ? 'Sign In' : 'Register' }}
+      </button>
+    </div>
+
+    <div class="security-note">
+      <span class="security-dot"></span>
+      Secure customer authentication
+    </div>
+
+  </div>
+</div>

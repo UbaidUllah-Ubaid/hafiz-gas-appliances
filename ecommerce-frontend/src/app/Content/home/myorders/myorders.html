@@ -1,0 +1,155 @@
+<div class="myorders-page">
+  <div class="myorders-container">
+
+    <header class="page-heading">
+      <div>
+        <p class="eyebrow">HAFIZ GAS APPLIANCES</p>
+        <h1>My Orders</h1>
+        <p class="subtitle">
+          Track your orders and delivery status.
+        </p>
+      </div>
+
+      <a routerLink="/products" class="shop-link">
+        Continue Shopping →
+      </a>
+    </header>
+
+    <section class="stats-grid">
+      <div class="stat-card total-card">
+        <span class="stat-label">Total Orders</span>
+        <strong>{{ totalOrders }}</strong>
+        <span class="stat-description">All your orders</span>
+      </div>
+
+      <div class="stat-card processing-card">
+        <span class="stat-label">Processing</span>
+        <strong>{{ processingOrders }}</strong>
+        <span class="stat-description">Not yet received</span>
+      </div>
+
+      <div class="stat-card received-card">
+        <span class="stat-label">Received</span>
+        <strong>{{ receivedOrders }}</strong>
+        <span class="stat-description">Successfully delivered</span>
+      </div>
+    </section>
+
+    <section class="orders-section">
+      <div class="orders-heading">
+        <div>
+          <h2>Your Orders</h2>
+          <p>View your order details below.</p>
+        </div>
+
+        <button
+          type="button"
+          class="refresh-button"
+          (click)="loadOrders()"
+          [disabled]="loading">
+          ↻ Refresh
+        </button>
+      </div>
+
+      @if (loading) {
+        <div class="message-panel">
+          <div class="loader"></div>
+          <p>Loading your orders...</p>
+        </div>
+      } @else if (errorMessage) {
+        <div class="message-panel error-panel">
+          <h3>Unable to load orders</h3>
+          <p>{{ errorMessage }}</p>
+          <button type="button" class="primary-button"
+            (click)="loadOrders()">
+            Try Again
+          </button>
+        </div>
+      } @else if (orders.length === 0) {
+        <div class="message-panel empty-panel">
+          <div class="empty-icon">📦</div>
+          <h3>No orders yet</h3>
+          <p>Your placed orders will appear here.</p>
+          <a routerLink="/products" class="primary-button">
+            Explore Products
+          </a>
+        </div>
+      } @else {
+        <div class="orders-list">
+          @for (order of orders; track trackByOrderId($index, order)) {
+            <article class="order-card">
+
+              <div class="order-top">
+                <div>
+                  <span class="order-number">
+                    Order #{{ order.id }}
+                  </span>
+                  <p class="order-date">
+                    Placed on {{ formatDate(order.created_at) }}
+                  </p>
+                </div>
+
+                <span class="status-badge"
+                  [ngClass]="getStatusClass(order.status)">
+                  {{ getStatusLabel(order.status) }}
+                </span>
+              </div>
+
+              <div class="order-products">
+                @if (order.items && order.items.length > 0) {
+                  @for (item of order.items; track $index) {
+                    <div class="product-row">
+                      <div>
+                        <strong>
+                          {{ item.product_title || 'Product' }}
+                        </strong>
+                        <span>Quantity: {{ item.quantity || 1 }}</span>
+                      </div>
+
+                      <span class="product-price">
+                        Rs. {{ formatPrice(
+                          (item.unit_price || 0) * (item.quantity || 1)
+                        ) }}
+                      </span>
+                    </div>
+                  }
+                } @else {
+                  <p class="order-date">
+                    Order details are available in your order record.
+                  </p>
+                }
+              </div>
+
+              <div class="order-bottom">
+                <div>
+                  <span class="total-label">Order Total</span>
+                  <strong class="order-total">
+                    Rs. {{ formatPrice(order.total_price) }}
+                  </strong>
+                </div>
+
+                <div class="delivery-status">
+                  @if (order.status === 'delivered') {
+                    <span class="received-text">
+                      ✓ Order received
+                    </span>
+                  } @else if (order.status === 'cancelled') {
+                    <span class="cancelled-text">
+                      Order cancelled
+                    </span>
+                  } @else {
+                    <span class="processing-text">
+                      Your order is being processed.
+                    </span>
+                  }
+                </div>
+              </div>
+
+            </article>
+          }
+        </div>
+      }
+    </section>
+
+  </div>
+</div>

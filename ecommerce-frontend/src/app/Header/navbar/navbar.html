@@ -1,0 +1,286 @@
+<nav class="navbar navbar-expand-lg navbar-light bg-white-glass sticky-top shadow-sm px-3 px-lg-4"
+  (click)="stopSearchClose($event)">
+
+  <div class="container-fluid">
+
+    <a class="navbar-brand d-flex align-items-center gap-2 fw-bold text-dark"
+   routerLink="/">
+
+  <i class="fa-solid fa-fire fire-logo-color"></i>
+
+  <span class="brand-text">
+    <span class="brand-name">
+      Hafiz<span class="text-orange">Gas</span>
+    </span>
+    <span class="brand-subtitle">APPLIANCES</span>
+  </span>
+
+</a>
+
+    <button class="navbar-toggler border-0 shadow-none order-lg-4 p-2"
+      type="button"
+      (click)="toggleMenu()"
+      [attr.aria-expanded]="isMenuOpen"
+      aria-label="Toggle navigation">
+
+      <div class="hamburger-icon" [class.open]="isMenuOpen">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+
+    </button>
+
+    <div class="d-flex align-items-center gap-2 order-lg-3 ms-auto me-2 me-lg-0">
+
+      <!-- Desktop Search -->
+      <div class="d-none d-lg-flex position-relative search-container">
+
+        <input
+          type="text"
+          class="form-control rounded-pill ps-4 pe-5 py-1 border-secondary-subtle shadow-none search-input"
+          placeholder="Search products..."
+          [(ngModel)]="searchQuery"
+          (input)="onSearchInput()"
+          (keyup.enter)="onSearch()"
+          autocomplete="off">
+
+        <button
+          class="btn position-absolute end-0 top-50 translate-middle-y border-0 text-muted bg-transparent pe-3"
+          type="button"
+          (click)="onSearch()">
+
+          <i class="bi bi-search"></i>
+        </button>
+
+        <div class="search-results"
+          *ngIf="showSearchResults"
+          (click)="stopSearchClose($event)">
+
+          <div class="search-heading">Search Results</div>
+
+          <div *ngIf="filteredProducts.length === 0"
+            class="no-search-results">
+            No products found.
+          </div>
+
+          <div
+            class="search-result-item"
+            *ngFor="let product of filteredProducts"
+            (click)="openProduct(product)">
+
+            <img
+              *ngIf="imageUrl(product)"
+              [src]="imageUrl(product)"
+              [alt]="product.title">
+
+            <div class="search-product-placeholder"
+              *ngIf="!imageUrl(product)">
+              <i class="bi bi-box-seam"></i>
+            </div>
+
+            <div class="search-product-info">
+              <div class="search-product-title">{{ product.title }}</div>
+              <div class="search-product-price">
+                Rs. {{ formatPrice(product.price) }}
+              </div>
+            </div>
+
+            <i class="bi bi-arrow-up-right search-arrow"></i>
+
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Cart -->
+      <a routerLink="/cart"
+        class="btn-icon position-relative text-dark"
+        title="Shopping Cart">
+
+        <i class="bi bi-cart3 fs-5"></i>
+
+        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-orange text-white">
+          {{ cartItemCount }}
+        </span>
+
+      </a>
+
+      <!-- Account -->
+      <div class="dropdown">
+
+        <button
+          class="btn btn-outline-dark rounded-circle p-2 d-flex align-items-center justify-content-center avatar-btn"
+          type="button"
+          data-bs-toggle="dropdown"
+          aria-expanded="false">
+
+          <i class="bi bi-person-circle fs-5"></i>
+
+        </button>
+
+        <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-2">
+
+          <li>
+            <h6 class="dropdown-header">Aapka Account</h6>
+          </li>
+
+          <li>
+            <a class="dropdown-item d-flex align-items-center gap-2"
+              routerLink="/profile">
+              <i class="bi bi-person"></i>
+              My Profile
+            </a>
+          </li>
+
+          <li>
+            <a class="dropdown-item d-flex align-items-center gap-2"
+              routerLink="/customerlogin">
+              <i class="bi bi-person"></i>
+              Login / Register
+            </a>
+          </li>
+
+          <li>
+            <a class="dropdown-item d-flex align-items-center gap-2"
+              routerLink="/login">
+              <i class="bi bi-shield-lock"></i>
+              Only Admin Login
+            </a>
+          </li>
+
+          <li><hr class="dropdown-divider"></li>
+
+          <li>
+            <a class="dropdown-item d-flex align-items-center gap-2 text-danger"
+              href="javascript:void(0)"
+              (click)="logout()">
+              <i class="bi bi-box-arrow-right"></i>
+              Logout
+            </a>
+          </li>
+
+        </ul>
+      </div>
+
+    </div>
+
+    <!-- Navigation -->
+    <div class="collapse navbar-collapse order-lg-2"
+      [class.show]="isMenuOpen"
+      id="navbarNav">
+
+      <!-- Mobile Search -->
+      <div class="d-lg-none my-3 px-2 position-relative">
+
+        <div class="position-relative">
+
+          <input
+            type="text"
+            class="form-control rounded-pill ps-4 pe-5 py-2 border-secondary-subtle shadow-none"
+            placeholder="Search products..."
+            [(ngModel)]="searchQuery"
+            (input)="onSearchInput()"
+            (keyup.enter)="onSearch()"
+            autocomplete="off">
+
+          <button
+            class="btn position-absolute end-0 top-50 translate-middle-y border-0 text-muted bg-transparent pe-3"
+            type="button"
+            (click)="onSearch()">
+
+            <i class="bi bi-search"></i>
+
+          </button>
+
+        </div>
+
+        <div class="search-results mobile-search-results"
+          *ngIf="showSearchResults"
+          (click)="stopSearchClose($event)">
+
+          <div class="search-heading">Search Results</div>
+
+          <div *ngIf="filteredProducts.length === 0"
+            class="no-search-results">
+            No products found.
+          </div>
+
+          <div
+            class="search-result-item"
+            *ngFor="let product of filteredProducts"
+            (click)="openProduct(product)">
+
+            <img
+              *ngIf="imageUrl(product)"
+              [src]="imageUrl(product)"
+              [alt]="product.title">
+
+            <div class="search-product-placeholder"
+              *ngIf="!imageUrl(product)">
+              <i class="bi bi-box-seam"></i>
+            </div>
+
+            <div class="search-product-info">
+              <div class="search-product-title">{{ product.title }}</div>
+              <div class="search-product-price">
+                Rs. {{ formatPrice(product.price) }}
+              </div>
+            </div>
+
+            <i class="bi bi-arrow-up-right search-arrow"></i>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      <ul class="navbar-nav mx-auto mb-2 mb-lg-0 gap-lg-2 text-center py-2 py-lg-0">
+
+        <li class="nav-item">
+          <a class="nav-link py-2 px-3 rounded-pill"
+            [class.active]="activeLink === 'Home'"
+            (click)="setActive('Home')"
+            routerLink="/">
+            <i class="bi bi-house-door me-1 d-lg-none"></i>
+            Home
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link py-2 px-3 rounded-pill"
+            [class.active]="activeLink === 'My Orders'"
+            (click)="setActive('My Orders')"
+            routerLink="/myorders">
+            <i class="bi bi-bag-check me-1 d-lg-none"></i>
+            My Orders
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link py-2 px-3 rounded-pill"
+            [class.active]="activeLink === 'About Us'"
+            (click)="setActive('About Us')"
+            routerLink="/about">
+            <i class="bi bi-info-circle me-1 d-lg-none"></i>
+            About
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link py-2 px-3 rounded-pill"
+            [class.active]="activeLink === 'Contact Us'"
+            (click)="setActive('Contact Us')"
+            routerLink="/contact">
+            <i class="bi bi-envelope me-1 d-lg-none"></i>
+            Contact Us
+          </a>
+        </li>
+
+      </ul>
+
+    </div>
+
+  </div>
+</nav>

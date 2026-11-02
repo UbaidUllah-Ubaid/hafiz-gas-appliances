@@ -1,0 +1,292 @@
+<div class="product-page">
+  <header class="page-header">
+    <div>
+      <h1>Add New Product</h1>
+      <p>Apne store mein naya product add karo.</p>
+    </div>
+  </header>
+
+  <form class="product-form" (ngSubmit)="saveProduct()">
+    <div class="form-grid">
+
+      <div class="field">
+        <label for="title">Product Name *</label>
+        <input
+          id="title"
+          name="title"
+          [(ngModel)]="product.title"
+          placeholder="e.g. Gas Heater"
+          required
+        />
+      </div>
+
+      <div class="field">
+        <label for="sku">SKU *</label>
+        <input
+          id="sku"
+          name="sku"
+          [(ngModel)]="product.sku"
+          placeholder="e.g. HGA-001"
+          required
+        />
+      </div>
+
+      <div class="field">
+        <label for="category">Category *</label>
+        <input
+          id="category"
+          name="category"
+          [(ngModel)]="product.category"
+          placeholder="e.g. Tandoor, Gas Heater"
+          required
+        />
+      </div>
+
+      <div class="field">
+        <label for="price">Base Price (Rs.) *</label>
+        <input
+          id="price"
+          name="price"
+          type="number"
+          min="0.01"
+          step="0.01"
+          [(ngModel)]="product.price"
+          required
+        />
+        <small>Ye Silver color ki base price hai.</small>
+      </div>
+
+      <div class="field">
+        <label for="stock">Stock Quantity *</label>
+        <input
+          id="stock"
+          name="stock"
+          type="number"
+          min="0"
+          step="1"
+          [(ngModel)]="product.stock"
+          required
+        />
+      </div>
+
+      <div class="field full-width">
+        <label for="images">Product Images</label>
+
+        <input
+  id="images"
+  name="images"
+  type="file"
+  accept="image/jpeg,image/png,image/webp,image/gif"
+  multiple
+  (change)="onImagesSelected($event)"
+/>
+
+        <small>
+          Maximum 10 images, har image 5 MB tak.
+          Pehli image main product image hogi.
+        </small>
+
+        @if (imagePreviews.length > 0) {
+          <div class="image-preview">
+            <p>Selected Images ({{ imagePreviews.length }})</p>
+
+            <div class="image-preview-grid">
+              @for (preview of imagePreviews; track $index) {
+                <div class="preview-item">
+                  <img
+                    [src]="preview"
+                    [alt]="'Product image ' + ($index + 1)"
+                  />
+
+                  @if ($index === 0) {
+                    <span class="main-image-label">Main Image</span>
+                  } @else {
+                    <span class="image-number">
+                      Image {{ $index + 1 }}
+                    </span>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="field full-width">
+        <label>Available Colors</label>
+        <p class="field-help">
+          Customer sirf woh colors select kar sakega jinhein tum enable karoge.
+        </p>
+
+        @for (color of colors; track color.option_value) {
+          <div class="size-row">
+            <div class="size-input">
+              <label>
+                <input
+                  type="checkbox"
+                  [name]="'enable-color-' + color.option_value"
+                  [(ngModel)]="color.enabled"
+                  [ngModelOptions]="{ standalone: true }"
+                />
+                {{ color.option_value }}
+              </label>
+            </div>
+
+            <div class="size-input">
+              <label [for]="'color-extra-' + color.option_value">
+                Extra Price (Rs.)
+              </label>
+
+              <input
+                [id]="'color-extra-' + color.option_value"
+                [name]="'color-extra-' + color.option_value"
+                type="number"
+                min="0"
+                step="0.01"
+                [(ngModel)]="color.extra_price"
+                [ngModelOptions]="{ standalone: true }"
+                [readonly]="color.option_value === 'Silver'"
+                [disabled]="color.option_value === 'Silver' || !color.enabled"
+              />
+            </div>
+          </div>
+        }
+
+        <small>
+          Silver = Base Price. Golden = Base Price + Golden Extra Price.
+        </small>
+      </div>
+
+      <div class="field full-width">
+        <label>Available Gas Types</label>
+        <p class="field-help">
+          Product Sui Gas, LPG ya dono par available ho sakta hai.
+        </p>
+
+        <div class="gas-types">
+          @for (gas of gasTypes; track gas.option_value) {
+            <label class="publish-option">
+              <input
+                type="checkbox"
+                [name]="'gas-' + gas.option_value"
+                [(ngModel)]="gas.enabled"
+                [ngModelOptions]="{ standalone: true }"
+              />
+              {{ gas.option_value }}
+            </label>
+          }
+        </div>
+      </div>
+
+      <div class="field full-width">
+        <label>Product Sizes / Capacity</label>
+        <p class="field-help">
+          Example: Small, Medium, Large, 10 Litre, 15 Litre, Commercial.
+        </p>
+
+        @for (size of sizes; track $index) {
+          <div class="size-row">
+            <div class="size-input">
+              <label [for]="'size-' + $index">Size / Capacity</label>
+              <input
+                [id]="'size-' + $index"
+                [name]="'size-' + $index"
+                [(ngModel)]="size.option_value"
+                [ngModelOptions]="{ standalone: true }"
+                placeholder="e.g. 10 Litre"
+              />
+            </div>
+
+            <div class="size-input">
+              <label [for]="'size-price-' + $index">
+                Extra Price (Rs.)
+              </label>
+              <input
+                [id]="'size-price-' + $index"
+                [name]="'size-price-' + $index"
+                type="number"
+                min="0"
+                step="0.01"
+                [(ngModel)]="size.extra_price"
+                [ngModelOptions]="{ standalone: true }"
+              />
+            </div>
+
+            <button
+              type="button"
+              class="remove-size-btn"
+              (click)="removeSize($index)"
+            >
+              Remove
+            </button>
+          </div>
+        }
+
+        <button
+          type="button"
+          class="add-size-btn"
+          (click)="addSize()"
+        >
+          + Add Another Size
+        </button>
+      </div>
+
+      <div class="field full-width">
+        <label for="description">Description *</label>
+        <textarea
+          id="description"
+          name="description"
+          rows="5"
+          [(ngModel)]="product.description"
+          placeholder="Product ki details likho..."
+          required
+        ></textarea>
+      </div>
+
+      <div class="field full-width">
+        <label class="publish-option">
+          <input
+            type="checkbox"
+            name="is_published"
+            [(ngModel)]="product.is_published"
+          />
+          Publish product on website
+        </label>
+      </div>
+
+    </div>
+
+    @if (error) {
+      <p class="error-message">{{ error }}</p>
+    }
+
+    @if (success) {
+      <p class="success-message">{{ success }}</p>
+    }
+
+    <div class="form-actions">
+      <button
+        type="button"
+        class="cancel-btn"
+        (click)="cancel()"
+        [disabled]="saving"
+      >
+        Cancel
+      </button>
+
+      <button
+        type="submit"
+        class="save-btn"
+        [disabled]="saving"
+      >
+        {{
+          uploading
+            ? 'Uploading Images...'
+            : saving
+              ? 'Saving Product...'
+              : 'Save Product'
+        }}
+      </button>
+    </div>
+  </form>
+</div>

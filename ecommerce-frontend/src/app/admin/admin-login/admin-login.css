@@ -1,0 +1,378 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  font-family: Arial, Helvetica, sans-serif;
+  color: #252525;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 16px;
+  background: #f5f5f3;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 850px;
+  display: grid;
+  grid-template-columns: 0.85fr 1.15fr;
+  overflow: hidden;
+  border: 1px solid #dededb;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.06);
+}
+
+/* Brand section */
+
+.brand-section {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 45px 35px;
+  background: #f0f0ed;
+  border-right: 1px solid #dededb;
+}
+
+.brand-mark {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 28px;
+  color: #e47735;
+  background: #fff;
+  border: 1px solid #e3e0dc;
+  border-radius: 6px;
+}
+
+.brand-mark svg {
+  width: 31px;
+  height: 31px;
+}
+
+.brand-eyebrow,
+.section-label {
+  color: #c66b31;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+}
+
+.brand-section h1 {
+  margin: 15px 0 0;
+  color: #252525;
+  font-size: clamp(27px, 3vw, 36px);
+  font-weight: 800;
+  letter-spacing: -1px;
+  line-height: 1.1;
+}
+
+.brand-section h1 span {
+  color: #df7938;
+}
+
+.brand-subtitle {
+  margin: 7px 0 0;
+  color: #656565;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 5px;
+}
+
+.brand-line {
+  width: 38px;
+  height: 2px;
+  margin-top: 25px;
+  background: #e47735;
+}
+
+.brand-description {
+  max-width: 220px;
+  margin: 17px 0 0;
+  color: #707070;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+/* Form */
+
+.form-section {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 45px 42px 28px;
+}
+
+.form-heading {
+  margin-bottom: 28px;
+}
+
+.form-heading h2 {
+  margin: 11px 0 7px;
+  color: #262626;
+  font-size: 27px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.form-heading p {
+  margin: 0;
+  color: #777;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-field label {
+  color: #333;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-wrap > svg {
+  position: absolute;
+  left: 13px;
+  width: 18px;
+  height: 18px;
+  color: #888;
+  pointer-events: none;
+}
+
+.input-wrap input {
+  width: 100%;
+  min-width: 0;
+  height: 46px;
+  padding: 0 13px 0 41px;
+  border: 1px solid #d7d7d4;
+  border-radius: 5px;
+  outline: none;
+  background: #fff;
+  color: #292929;
+  font-family: inherit;
+  font-size: 13px;
+  transition: border-color 0.15s ease;
+}
+
+.input-wrap input::placeholder {
+  color: #999;
+}
+
+.input-wrap input:focus {
+  border-color: #e47735;
+  box-shadow: 0 0 0 2px rgba(228, 119, 53, 0.1);
+}
+
+/* Error messages */
+
+.login-error,
+.error-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin: -3px 0 0;
+  padding: 10px 11px;
+  border: 1px solid #f0c9b7;
+  border-radius: 5px;
+  background: #fff8f4;
+  color: #b94e24;
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.error-symbol {
+  flex: 0 0 17px;
+  width: 17px;
+  height: 17px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* Button */
+
+.login-button {
+  width: 100%;
+  min-height: 46px;
+  margin-top: 2px;
+  padding: 12px 16px;
+  border: 1px solid #df7938;
+  border-radius: 5px;
+  background: #e47735;
+  color: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.login-button:hover:not(:disabled) {
+  background: #cd652b;
+}
+
+.login-button:focus-visible {
+  outline: 2px solid #e47735;
+  outline-offset: 3px;
+}
+
+.login-button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.button-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+}
+
+.button-arrow {
+  font-size: 17px;
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Security note and footer */
+
+.security-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 7px;
+  color: #777;
+  font-size: 11px;
+}
+
+.security-note svg {
+  width: 15px;
+  height: 15px;
+  color: #777;
+  flex-shrink: 0;
+}
+
+.login-footer {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 15px 22px;
+  border-top: 1px solid #dededb;
+  background: #fff;
+  color: #858585;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+/* Mobile */
+
+@media (max-width: 680px) {
+  .login-container {
+    padding: 18px 13px;
+  }
+
+  .login-card {
+    max-width: 430px;
+    grid-template-columns: 1fr;
+  }
+
+  .brand-section {
+    padding: 26px 25px;
+    border-right: 0;
+    border-bottom: 1px solid #dededb;
+  }
+
+  .brand-mark {
+    width: 42px;
+    height: 42px;
+    margin-bottom: 19px;
+  }
+
+  .brand-mark svg {
+    width: 27px;
+    height: 27px;
+  }
+
+  .brand-section h1 {
+    font-size: 30px;
+  }
+
+  .brand-line {
+    margin-top: 18px;
+  }
+
+  .brand-description {
+    margin-top: 12px;
+  }
+
+  .form-section {
+    padding: 29px 25px 25px;
+  }
+
+  .form-heading {
+    margin-bottom: 23px;
+  }
+
+  .form-heading h2 {
+    font-size: 25px;
+  }
+
+  .login-form {
+    gap: 18px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

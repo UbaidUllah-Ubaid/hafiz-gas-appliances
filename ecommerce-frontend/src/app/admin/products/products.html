@@ -1,0 +1,66 @@
+<div class="products-page">
+  <header class="page-header">
+    <div>
+      <h1>Products Management</h1>
+      <p>Apne store ke tamam products yahan manage karo.</p>
+    </div>
+
+ 
+  </header>
+
+  @if (loading) {
+    <p class="message">Products load ho rahe hain...</p>
+  } @else if (error) {
+    <p class="error">{{ error }}</p>
+  } @else {
+    <div class="products-summary">
+      Total Products: <strong>{{ products.length }}</strong>
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>SKU</th>
+            <th>Category</th>
+            <th>Price</th>
+            <th>Stock</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          @for (product of products; track product.id) {
+            <tr>
+              <td>
+                <div class="product-name">
+                  @if (product.image_url && product.image_url !== 'string') {
+                    <img [src]="product.image_url" [alt]="product.title">
+                  }
+                  <strong>{{ product.title }}</strong>
+                </div>
+              </td>
+              <td>{{ product.sku }}</td>
+              <td>{{ product.category }}</td>
+              <td>Rs. {{ product.price }}</td>
+              <td>{{ product.stock }}</td>
+              <td>
+                <span
+                  class="status"
+                  [class.published]="product.is_published"
+                >
+                  {{ product.is_published ? 'Published' : 'Draft' }}
+                </span>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6">Abhi koi product nahi hai.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

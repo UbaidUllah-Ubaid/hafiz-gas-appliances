@@ -1,0 +1,292 @@
+
+<div class="cart-page">
+  <div class="cart-container">
+
+    <div class="cart-heading">
+      <div>
+        <p class="eyebrow">HAFIZ GAS APPLIANCES</p>
+        <h1>Shopping Cart</h1>
+        <p class="heading-description">
+          Review your selected products before checkout.
+        </p>
+      </div>
+
+      <a routerLink="/products" class="continue-link">
+        ← Continue Shopping
+      </a>
+    </div>
+
+    <div class="cart-layout">
+
+      <section class="cart-items-section">
+        <div class="section-heading">
+          <h2>Your Items</h2>
+          <span class="item-count">{{ totalItems }} item(s)</span>
+        </div>
+
+        <div class="empty-cart" *ngIf="items.length === 0">
+          <div class="empty-icon">🛒</div>
+          <h2>Your cart is empty</h2>
+          <p>You haven't added any products yet.</p>
+          <a routerLink="/products" class="shop-button">
+            Explore Products
+          </a>
+        </div>
+
+        <div class="cart-item"
+          *ngFor="let item of items; trackBy: trackById">
+
+          <div class="item-image">
+            <img
+              [src]="getImage(item.image)"
+              [alt]="item.name"
+            />
+          </div>
+
+          <div class="item-details">
+            <h3>{{ item.name }}</h3>
+
+            <p class="item-variation" *ngIf="item.color">
+              <strong>Color:</strong> {{ item.color }}
+            </p>
+
+            <p class="item-variation" *ngIf="item.size">
+              <strong>Size / Capacity:</strong> {{ item.size }}
+            </p>
+
+            <p class="item-variation" *ngIf="item.gasType">
+              <strong>Gas Type:</strong> {{ item.gasType }}
+            </p>
+
+            <p class="item-price">
+              Rs. {{ formatPrice(item.price) }}
+            </p>
+
+            <div class="item-actions">
+              <div class="quantity-control">
+                <button
+                  type="button"
+                  (click)="decrease(item)"
+                  [disabled]="item.quantity <= 1"
+                  aria-label="Decrease quantity">
+                  −
+                </button>
+
+                <span>{{ item.quantity }}</span>
+
+                <button
+                  type="button"
+                  (click)="increase(item)"
+                  aria-label="Increase quantity">
+                  +
+                </button>
+              </div>
+
+              <button
+                type="button"
+                class="remove-button"
+                (click)="removeItem(item.id)">
+                Remove
+              </button>
+            </div>
+          </div>
+
+          <div class="item-total">
+            <span>Item Total</span>
+            <strong>
+              Rs. {{ formatPrice(item.price * item.quantity) }}
+            </strong>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          class="clear-cart-button"
+          *ngIf="items.length > 0"
+          (click)="clearCart()">
+          Clear Cart
+        </button>
+      </section>
+
+      <aside class="order-summary" *ngIf="items.length > 0">
+        <h2>Order Summary</h2>
+
+        <div class="summary-row">
+          <span>Total Items</span>
+          <span>{{ totalItems }}</span>
+        </div>
+
+        <div class="summary-row">
+          <span>Subtotal</span>
+          <span>Rs. {{ formatPrice(subtotal) }}</span>
+        </div>
+
+        <div class="summary-row">
+          <span>Delivery Charges</span>
+          <span class="delivery-note">Confirm later</span>
+        </div>
+
+        <div class="summary-divider"></div>
+
+        <div class="summary-total">
+          <span>Subtotal</span>
+          <strong>Rs. {{ formatPrice(subtotal) }}</strong>
+        </div>
+
+        <p class="summary-note">
+          Delivery charges and availability will be confirmed by our team.
+        </p>
+
+        <button
+          type="button"
+          class="checkout-button"
+          (click)="goToCheckout()">
+          Proceed to Checkout →
+        </button>
+
+        <a routerLink="/products" class="back-link">
+          Continue Shopping
+        </a>
+      </aside>
+
+    </div>
+  </div>
+</div>
+
+<!-- Checkout Popup -->
+@if (showCheckout) {
+  <div class="checkout-overlay">
+    <div class="checkout-modal">
+
+      <button
+        type="button"
+        class="checkout-close"
+        (click)="showCheckout = false"
+        aria-label="Close checkout">
+        &times;
+      </button>
+
+      <p class="eyebrow">HAFIZ GAS APPLIANCES</p>
+      <h2>Confirm Your Order</h2>
+
+      <p class="checkout-description">
+        Please enter your delivery details before confirming.
+      </p>
+
+      @if (orderError) {
+        <p class="checkout-error" role="alert">
+          {{ orderError }}
+        </p>
+      }
+
+      <form #checkoutForm="ngForm" (ngSubmit)="confirmOrder()">
+
+        <label for="customerName">Full Name</label>
+        <input
+          id="customerName"
+          type="text"
+          name="customerName"
+          [(ngModel)]="customerName"
+          required
+          maxlength="100"
+          autocomplete="name"
+          placeholder="Enter your full name">
+
+        <label for="customerPhone">Phone Number</label>
+        <input
+          id="customerPhone"
+          type="tel"
+          name="customerPhone"
+          [(ngModel)]="customerPhone"
+          required
+          maxlength="30"
+          autocomplete="tel"
+          placeholder="03XX XXXXXXX">
+
+        <label for="customerCity">City</label>
+        <input
+          id="customerCity"
+          type="text"
+          name="customerCity"
+          [(ngModel)]="customerCity"
+          required
+          maxlength="100"
+          autocomplete="address-level2"
+          placeholder="Enter your city">
+
+        <label for="customerAddress">Complete Address</label>
+        <textarea
+          id="customerAddress"
+          name="customerAddress"
+          [(ngModel)]="customerAddress"
+          required
+          maxlength="2000"
+          rows="3"
+          autocomplete="street-address"
+          placeholder="House number, street, area"></textarea>
+
+        <label for="paymentMethod">Payment Method</label>
+        <select
+          id="paymentMethod"
+          name="paymentMethod"
+          [(ngModel)]="paymentMethod"
+          required>
+          <option value="Cash on Delivery">
+            Cash on Delivery
+          </option>
+        </select>
+
+        <div class="checkout-total">
+          <span>Order Subtotal</span>
+          <strong>Rs. {{ formatPrice(subtotal) }}</strong>
+        </div>
+
+        <p class="checkout-description">
+          Delivery charges will be confirmed on WhatsApp.
+        </p>
+
+        <button
+          type="submit"
+          class="checkout-confirm-button"
+          [disabled]="!checkoutForm.valid || items.length === 0 || submittingOrder">
+          @if (submittingOrder) {
+            Placing Order...
+          } @else {
+            Confirm Order
+          }
+        </button>
+
+        <p>Form valid: {{ checkoutForm.valid }}</p>
+<p>Cart items: {{ items.length }}</p>
+<p>Submitting: {{ submittingOrder }}</p>
+
+        <button
+          type="button"
+          class="checkout-cancel-button"
+          [disabled]="submittingOrder"
+          (click)="showCheckout = false">
+          Cancel
+        </button>
+
+      </form>
+    </div>
+  </div>
+}
+
+<!-- Order Confirmation -->
+@if (orderMessage) {
+  <div class="order-success" role="status">
+    <div class="success-check">✓</div>
+
+    <h2>Order Confirmed!</h2>
+
+    <p>{{ orderMessage }}</p>
+
+    <button
+      type="button"
+      class="checkout-confirm-button"
+      (click)="openWhatsApp()">
+      Send Order on WhatsApp
+    </button>
+  </div>
+}

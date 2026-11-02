@@ -1,0 +1,254 @@
+:host {
+  display: block;
+  min-height: 100%;
+  color: #222222;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.auth-page {
+  min-height: 78vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 48px 18px;
+  background: #ffffff;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 460px;
+  padding: 38px 36px;
+  background: #ffffff;
+  border: 1px solid #eeeeee;
+  border-radius: 14px;
+  box-shadow: 0 12px 45px rgba(0, 0, 0, 0.055);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 11px;
+  margin-bottom: 36px;
+  color: #222222;
+  text-decoration: none;
+}
+
+.brand-icon {
+  width: 43px;
+  height: 43px;
+  display: grid;
+  place-items: center;
+  background: #f47721;
+  color: #ffffff;
+  font-size: 25px;
+  font-weight: 800;
+  border-radius: 8px;
+}
+
+.brand-name {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+}
+
+.brand-name strong {
+  color: #f47721;
+}
+
+.heading {
+  margin-bottom: 28px;
+}
+
+.eyebrow {
+  color: #ed711e;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.8px;
+}
+
+.heading h1 {
+  margin: 10px 0;
+  color: #222222;
+  font-size: 29px;
+  line-height: 1.25;
+  font-weight: 750;
+}
+
+.heading p {
+  margin: 0;
+  color: #777777;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.form-group {
+  margin-bottom: 19px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #333333;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.form-group input {
+  width: 100%;
+  min-height: 47px;
+  padding: 12px 14px;
+  border: 1px solid #dddddd;
+  border-radius: 7px;
+  outline: none;
+  background: #ffffff;
+  color: #222222;
+  font: inherit;
+  font-size: 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-group input::placeholder {
+  color: #aaaaaa;
+}
+
+.form-group input:focus {
+  border-color: #f47721;
+  box-shadow: 0 0 0 3px rgba(244, 119, 33, 0.11);
+}
+
+.submit-button {
+  width: 100%;
+  min-height: 49px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 13px 18px;
+  border: none;
+  border-radius: 7px;
+  background: #f47721;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 750;
+  letter-spacing: 0.8px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.submit-button:hover:not(:disabled) {
+  background: #df6414;
+  transform: translateY(-1px);
+}
+
+.submit-button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.button-arrow {
+  font-size: 20px;
+}
+
+.message {
+  margin: 12px 0;
+  padding: 11px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.error-message {
+  border: 1px solid #f3c7c7;
+  background: #fff5f5;
+  color: #b42318;
+}
+
+.success-message {
+  border: 1px solid #b7e4c7;
+  background: #f0fff4;
+  color: #18713a;
+}
+
+.switch-mode {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  margin-top: 24px;
+  color: #777777;
+  font-size: 13px;
+  text-align: center;
+}
+
+.switch-mode button {
+  padding: 3px;
+  border: none;
+  background: transparent;
+  color: #ed711e;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.switch-mode button:hover {
+  text-decoration: underline;
+}
+
+.security-note {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 28px;
+  padding-top: 18px;
+  border-top: 1px solid #eeeeee;
+  color: #888888;
+  font-size: 11px;
+}
+
+.security-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #37a66b;
+}
+
+@media (max-width: 480px) {
+  .auth-page {
+    min-height: auto;
+    padding: 30px 14px;
+  }
+
+  .auth-card {
+    padding: 28px 21px;
+    border-radius: 11px;
+  }
+
+  .brand {
+    margin-bottom: 29px;
+  }
+
+  .heading h1 {
+    font-size: 25px;
+  }
+}
+
+.password-hint {
+  margin-top: 6px;
+  padding: 6px 9px;
+  border-left: 2px solid #e9a04b;
+  background: rgba(233, 160, 75, 0.07);
+  color: #999;
+  font-size: 11px;
+  line-height: 1.4;
+  border-radius: 2px;
+  width: fit-content;
+}

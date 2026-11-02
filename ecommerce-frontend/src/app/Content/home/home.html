@@ -1,0 +1,158 @@
+<section class="hero-section">
+  <div id="heroCarousel" class="carousel slide">
+    <div class="carousel-inner">
+
+      @if (loading) {
+        <div class="hero-placeholder">Loading...</div>
+      } @else if (errorMessage) {
+        <div class="hero-placeholder">{{ errorMessage }}</div>
+      } @else if (heroProducts.length === 0) {
+        <div class="hero-placeholder">Welcome to Hafiz Gas Appliances</div>
+      } @else {
+        @for (product of heroProducts; track product.id; let i = $index) {
+          <div class="carousel-item" [class.active]="i === currentIndex">
+            <div class="hero-banner">
+
+              <img
+                [src]="product.imageUrl.startsWith('http')
+                  ? product.imageUrl
+                  : 'http://localhost:3000' + product.imageUrl"
+                [alt]="product.name"
+                class="hero-image"
+              />
+
+              <div class="hero-overlay">
+
+  <h1 class="hero-brand">
+    <span class="hero-brand-name">
+      <span class="hero-hafiz">HAFIZ</span>
+      <span class="hero-gas">GAS</span>
+    </span>
+
+    <span class="hero-subtitle">APPLIANCES</span>
+  </h1>
+
+  <p class="hero-product-name">{{ product.name }}</p>
+
+  <a [routerLink]="['/products', product.id]" class="hero-button">
+    View Product
+  </a>
+
+</div>
+
+            </div>
+          </div>
+        }
+      }
+    </div>
+
+    @if (heroProducts.length > 1) {
+      <button class="carousel-control-prev" type="button"
+        aria-label="Previous product" (click)="previousSlide()">
+        <span class="carousel-control-prev-icon"></span>
+      </button>
+
+      <button class="carousel-control-next" type="button"
+        aria-label="Next product" (click)="nextSlide()">
+        <span class="carousel-control-next-icon"></span>
+      </button>
+    }
+  </div>
+</section>
+
+
+
+
+
+<section class="products-section">
+  <div class="section-header">
+    <h2>Our Products</h2>
+    <p class="section-description">HAFIZ GAS APPLIANCES</p>
+  </div>
+
+  @if (loading) {
+    <div class="message-container">
+      <div class="spinner"></div>
+      <p class="message">Products loading...</p>
+    </div>
+  } @else if (errorMessage) {
+    <div class="message-container error">
+      <p class="message">{{ errorMessage }}</p>
+      <button class="retry-button" (click)="loadHeroProducts()">
+        Try Again
+      </button>
+    </div>
+  } @else {
+
+    @if (heroProducts.length > 0) {
+      <div class="products-grid">
+
+        @for (product of heroProducts; track product.id) {
+  <div class="product-card">
+
+    <div class="product-image-box">
+      @if (product.imageUrl) {
+        <a [routerLink]="['/products', product.id]">
+          <img
+            [src]="product.imageUrl.startsWith('http')
+              ? product.imageUrl
+              : 'http://localhost:3000' + product.imageUrl"
+            [alt]="product.name"
+            class="product-image"
+          />
+        </a>
+      } @else {
+        <div class="no-image-placeholder">
+          <p>No image available</p>
+        </div>
+      }
+    </div>
+
+    <div class="product-details">
+      <h3 class="product-title">
+        <a [routerLink]="['/products', product.id]" class="product-link">
+          {{ product.name }}
+        </a>
+      </h3>
+
+      @if (product.options && product.options.length > 0) {
+        <div class="product-options">
+          @for (option of product.options; track $index) {
+            <div class="option-badge">
+              <span class="option-value">{{ option.option_value }}</span>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- <span class="product-description">{{ product.description }}</span> -->
+
+      <!-- Price aur Button bilkul same row / line mein -->
+      <div class="product-footer">
+        <div class="price-container">
+          <span class="price-label">PRICE</span>
+          <p class="product-price">
+            <span class="currency">Rs. </span>
+            <span class="amount">{{ product.price.toLocaleString('en-PK') }}</span>
+          </p>
+        </div>
+
+        <div class="card-actions">
+          <button class="btn btn-order-now" type="button" (click)="orderNow(product.id)">
+            Order Now 🛒
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+}
+
+      </div>
+    } @else {
+      <div class="message-container">
+        <p class="message">No products available right now.</p>
+      </div>
+    }
+  }
+</section>

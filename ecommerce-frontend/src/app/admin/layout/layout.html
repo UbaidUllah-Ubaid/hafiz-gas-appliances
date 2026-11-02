@@ -1,0 +1,88 @@
+
+<div class="admin-layout">
+
+  @if (mobileMenuOpen) {
+    <div
+      class="sidebar-backdrop"
+      (click)="closeSidebar()"
+    ></div>
+  }
+
+  <aside
+    class="sidebar"
+    [class.mobile-open]="mobileMenuOpen"
+  >
+
+    <button
+      type="button"
+      class="sidebar-toggle"
+      (click)="toggleSidebar()"
+      [attr.aria-label]="mobileMenuOpen ? 'Close sidebar' : 'Open sidebar'"
+    >
+      {{ mobileMenuOpen ? '×' : '☰' }}
+    </button>
+
+    <div class="sidebar-brand">
+      <h2>HAFIZ GAS</h2>
+      <p>Admin Panel</p>
+    </div>
+
+    <nav>
+      <a
+        routerLink="/admin/dashboard"
+        routerLinkActive="active"
+        (click)="closeSidebar()"
+      >
+        <span class="nav-icon">⌂</span>
+        <span class="nav-text">Dashboard</span>
+      </a>
+
+      <a
+        routerLink="orders"
+        routerLinkActive="active"
+        (click)="closeSidebar()"
+      >
+        <span class="nav-icon">▤</span>
+        <span class="nav-text">Orders</span>
+      </a>
+
+      <a
+        routerLink="/admin/products"
+        routerLinkActive="active"
+        (click)="closeSidebar()"
+      >
+        <span class="nav-icon">□</span>
+        <span class="nav-text">Products</span>
+      </a>
+
+      <a
+        routerLink="addProduct"
+        routerLinkActive="active"
+        (click)="closeSidebar()"
+      >
+        <span class="nav-icon">＋</span>
+        <span class="nav-text">Add Products</span>
+      </a>
+
+      <a
+        routerLink="productUpdate"
+        routerLinkActive="active"
+        (click)="closeSidebar()"
+      >
+        <span class="nav-icon">✎</span>
+        <span class="nav-text">Products Update</span>
+      </a>
+    </nav>
+
+    <button class="logout-btn" (click)="logout()">
+      <span class="nav-icon">↪</span>
+      <span class="nav-text">Logout</span>
+    </button>
+
+  </aside>
+
+  <main class="main-content">
+    <router-outlet></router-outlet>
+  </main>
+
+</div>

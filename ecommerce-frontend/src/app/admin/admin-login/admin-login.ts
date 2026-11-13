@@ -43,7 +43,7 @@ isLoggingIn = false;
     this.loading = true;
 
     this.http.post<LoginResponse>(
-      'http://localhost:3000/api/auth/login',
+      'https://hafiz-gas-appliances-backend.onrender.com/api/auth/login',
       {
         email: this.email.trim(),
         password: this.password,

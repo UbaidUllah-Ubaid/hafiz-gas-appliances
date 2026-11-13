@@ -23,7 +23,7 @@ export interface Product {
 export class ProductService {
   private http = inject(HttpClient);
 
-  private apiUrl = 'http://localhost:3000/api/products';
+  private apiUrl = 'https://hafiz-gas-appliances-backend.onrender.com/api/products';
 
   getProducts(): Observable<Product[]> {
     return this.http.get<Product[]>(this.apiUrl);

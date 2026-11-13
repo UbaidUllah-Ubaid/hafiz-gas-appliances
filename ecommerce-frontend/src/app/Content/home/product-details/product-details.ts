@@ -51,8 +51,8 @@ export class ProductDetails implements OnInit, OnDestroy {
   private cartServices = inject(CartServices);
 private router = inject(Router);
 
-  private readonly apiUrl = 'http://localhost:3000/api/products';
-  private readonly serverUrl = 'http://localhost:3000';
+  private readonly apiUrl = 'https://hafiz-gas-appliances-backend.onrender.com/api/products';
+  private readonly serverUrl = 'https://hafiz-gas-appliances-backend.onrender.com';
 
   private routeSubscription?: Subscription;
   private productSubscription?: Subscription;

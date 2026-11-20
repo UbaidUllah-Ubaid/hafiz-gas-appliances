@@ -7,6 +7,7 @@ import crypto from 'node:crypto';
 
 import db from '../db.js';
 import { getJwtSecret, authenticateToken } from '../middleware/auth.js';
+import asyncHandler from '../middleware/async-handler.js';
 
 const router = express.Router();
 
@@ -116,7 +117,8 @@ router.post('/register', async (req, res, next) => {
       });
     }
 
-    if (db.prepare('SELECT id FROM users WHERE email = ?').get(email)) {
+    const existing = await db.query('SELECT id FROM users WHERE email = $1', [email]);
+    if (existing.rowCount) {
       return res.status(409).json({
         error: 'Email already registered'
       });
@@ -124,13 +126,16 @@ router.post('/register', async (req, res, next) => {
 
     const hash = await bcrypt.hash(password, 12);
 
-    const result = db.prepare(
-      'INSERT INTO users (name,email,phone,password,role) VALUES (?,?,?,?,?)'
-    ).run(name, email, phone, hash, 'user');
+    const result = await db.query(
+      'INSERT INTO users (name,email,phone,password,role) VALUES ($1,$2,$3,$4,$5) RETURNING id',
+      [name, email, phone, hash, 'user']
+    );
 
-    const user = db.prepare(
-      'SELECT id,name,email,phone,role FROM users WHERE id = ?'
-    ).get(result.lastInsertRowid);
+    const userResult = await db.query(
+      'SELECT id,name,email,phone,role FROM users WHERE id = $1',
+      [result.rows[0].id]
+    );
+    const user = userResult.rows[0];
 
     return res.status(201).json({
       message: 'User registered successfully',
@@ -139,7 +144,7 @@ router.post('/register', async (req, res, next) => {
     });
 
   } catch (e) {
-    if (String(e.message).includes('UNIQUE')) {
+    if (e.code === '23505') {
       return res.status(409).json({
         error: 'Email already registered'
       });
@@ -167,9 +172,8 @@ router.post('/login', loginLimiter, async (req, res, next) => {
       });
     }
 
-    const user = db.prepare(
-      'SELECT * FROM users WHERE email = ?'
-    ).get(email);
+    const result = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+    const user = result.rows[0];
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(401).json({
@@ -202,9 +206,11 @@ router.post('/forgot-password', forgotPasswordLimiter, async (req, res, next) =>
       });
     }
 
-    const user = db.prepare(
-      'SELECT id, email FROM users WHERE email = ?'
-    ).get(email);
+    const userResult = await db.query(
+      'SELECT id, email FROM users WHERE email = $1',
+      [email]
+    );
+    const user = userResult.rows[0];
 
     // Same response whether the account exists or not.
     if (!user) {
@@ -219,15 +225,13 @@ router.post('/forgot-password', forgotPasswordLimiter, async (req, res, next) =>
     const expiresAt = Date.now() + (5 * 60 * 1000);
 
     // Remove previous reset requests for this user.
-    db.prepare(
-      'DELETE FROM password_reset_otps WHERE user_id = ?'
-    ).run(user.id);
+    await db.query('DELETE FROM password_reset_otps WHERE user_id = $1', [user.id]);
 
-    db.prepare(`
+    await db.query(`
       INSERT INTO password_reset_otps
       (user_id, otp_hash, expires_at)
-      VALUES (?, ?, ?)
-    `).run(user.id, otpHash, expiresAt);
+      VALUES ($1, $2, $3)
+    `, [user.id, otpHash, expiresAt]);
 
     try {
       await mailer.sendMail({
@@ -247,9 +251,7 @@ router.post('/forgot-password', forgotPasswordLimiter, async (req, res, next) =>
         `
       });
     } catch (mailError) {
-      db.prepare(
-        'DELETE FROM password_reset_otps WHERE user_id = ?'
-      ).run(user.id);
+      await db.query('DELETE FROM password_reset_otps WHERE user_id = $1', [user.id]);
 
       console.error('Password reset email failed:', mailError.message);
 
@@ -269,7 +271,7 @@ router.post('/forgot-password', forgotPasswordLimiter, async (req, res, next) =>
 
 
 // VERIFY OTP
-router.post('/verify-reset-otp', verifyOtpLimiter, (req, res, next) => {
+router.post('/verify-reset-otp', verifyOtpLimiter, async (req, res, next) => {
   try {
     const email = typeof req.body?.email === 'string'
       ? req.body.email.trim().toLowerCase()
@@ -288,9 +290,8 @@ router.post('/verify-reset-otp', verifyOtpLimiter, (req, res, next) => {
       });
     }
 
-    const user = db.prepare(
-      'SELECT id FROM users WHERE email = ?'
-    ).get(email);
+    const userResult = await db.query('SELECT id FROM users WHERE email = $1', [email]);
+    const user = userResult.rows[0];
 
     if (!user) {
       return res.status(400).json({
@@ -298,12 +299,13 @@ router.post('/verify-reset-otp', verifyOtpLimiter, (req, res, next) => {
       });
     }
 
-    const record = db.prepare(`
+    const recordResult = await db.query(`
       SELECT * FROM password_reset_otps
-      WHERE user_id = ?
+      WHERE user_id = $1
       ORDER BY id DESC
       LIMIT 1
-    `).get(user.id);
+    `, [user.id]);
+    const record = recordResult.rows[0];
 
     if (
       !record ||
@@ -324,11 +326,11 @@ router.post('/verify-reset-otp', verifyOtpLimiter, (req, res, next) => {
     );
 
     if (!isValid) {
-      db.prepare(`
+      await db.query(`
         UPDATE password_reset_otps
         SET attempts = attempts + 1
-        WHERE id = ?
-      `).run(record.id);
+        WHERE id = $1
+      `, [record.id]);
 
       return res.status(400).json({
         error: 'Invalid or expired OTP.'
@@ -339,18 +341,18 @@ router.post('/verify-reset-otp', verifyOtpLimiter, (req, res, next) => {
     const resetTokenHash = hashValue(resetToken);
     const resetTokenExpiresAt = Date.now() + (10 * 60 * 1000);
 
-    db.prepare(`
+    await db.query(`
       UPDATE password_reset_otps
-      SET verified_at = ?,
-          reset_token_hash = ?,
-          reset_token_expires_at = ?
-      WHERE id = ?
-    `).run(
+      SET verified_at = $1,
+          reset_token_hash = $2,
+          reset_token_expires_at = $3
+      WHERE id = $4
+    `, [
       Date.now(),
       resetTokenHash,
       resetTokenExpiresAt,
       record.id
-    );
+    ]);
 
     return res.json({
       message: 'OTP verified successfully.',
@@ -400,9 +402,8 @@ router.post('/reset-password', resetPasswordLimiter, async (req, res, next) => {
       });
     }
 
-    const user = db.prepare(
-      'SELECT id FROM users WHERE email = ?'
-    ).get(email);
+    const userResult = await db.query('SELECT id FROM users WHERE email = $1', [email]);
+    const user = userResult.rows[0];
 
     if (!user) {
       return res.status(400).json({
@@ -410,12 +411,13 @@ router.post('/reset-password', resetPasswordLimiter, async (req, res, next) => {
       });
     }
 
-    const record = db.prepare(`
+    const recordResult = await db.query(`
       SELECT * FROM password_reset_otps
-      WHERE user_id = ?
+      WHERE user_id = $1
       ORDER BY id DESC
       LIMIT 1
-    `).get(user.id);
+    `, [user.id]);
+    const record = recordResult.rows[0];
 
     if (
       !record ||
@@ -444,14 +446,10 @@ router.post('/reset-password', resetPasswordLimiter, async (req, res, next) => {
 
     const newPasswordHash = await bcrypt.hash(password, 12);
 
-    db.prepare(
-      'UPDATE users SET password = ? WHERE id = ?'
-    ).run(newPasswordHash, user.id);
+    await db.query('UPDATE users SET password = $1 WHERE id = $2', [newPasswordHash, user.id]);
 
     // A reset token can only be used once.
-    db.prepare(
-      'DELETE FROM password_reset_otps WHERE user_id = ?'
-    ).run(user.id);
+    await db.query('DELETE FROM password_reset_otps WHERE user_id = $1', [user.id]);
 
     return res.json({
       message: 'Password reset successfully. You can now log in.'
@@ -464,10 +462,12 @@ router.post('/reset-password', resetPasswordLimiter, async (req, res, next) => {
 
 
 // GET CUSTOMER PROFILE
-router.get('/me', authenticateToken, (req, res) => {
-  const user = db.prepare(
-    'SELECT id,name,email,phone,role,created_at FROM users WHERE id = ?'
-  ).get(req.user.id);
+router.get('/me', authenticateToken, asyncHandler(async (req, res) => {
+  const result = await db.query(
+    'SELECT id,name,email,phone,role,created_at FROM users WHERE id = $1',
+    [req.user.id]
+  );
+  const user = result.rows[0];
 
   if (!user) {
     return res.status(401).json({
@@ -476,11 +476,11 @@ router.get('/me', authenticateToken, (req, res) => {
   }
 
   res.json({ user });
-});
+}));
 
 
 // UPDATE CUSTOMER PROFILE
-router.patch('/me', authenticateToken, (req, res, next) => {
+router.patch('/me', authenticateToken, async (req, res, next) => {
   try {
     const name = typeof req.body?.name === 'string'
       ? req.body.name.trim()
@@ -502,19 +502,22 @@ router.patch('/me', authenticateToken, (req, res, next) => {
       });
     }
 
-    const result = db.prepare(
-      'UPDATE users SET name = ?, phone = ? WHERE id = ?'
-    ).run(name, phone, req.user.id);
+    const result = await db.query(
+      'UPDATE users SET name = $1, phone = $2 WHERE id = $3',
+      [name, phone, req.user.id]
+    );
 
-    if (!result.changes) {
+    if (!result.rowCount) {
       return res.status(404).json({
         error: 'User not found.'
       });
     }
 
-    const user = db.prepare(
-      'SELECT id, name, email, phone, role, created_at FROM users WHERE id = ?'
-    ).get(req.user.id);
+    const userResult = await db.query(
+      'SELECT id, name, email, phone, role, created_at FROM users WHERE id = $1',
+      [req.user.id]
+    );
+    const user = userResult.rows[0];
 
     return res.json({
       message: 'Profile updated successfully',

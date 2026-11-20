@@ -3,7 +3,7 @@ const swaggerSpec = {
   info: {
     title: 'HAFIZ GAS APPLIANCES API',
     version: '2.0.0',
-    description: 'SQLite-backed e-commerce API. Admin routes require a Bearer JWT.'
+    description: 'PostgreSQL-backed e-commerce API. Admin routes require a Bearer JWT.'
   },
   servers: [{ url: 'http://localhost:3000' }],
   components: {

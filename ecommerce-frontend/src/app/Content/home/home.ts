@@ -8,8 +8,7 @@ import {
   ChangeDetectorRef
 } from '@angular/core';
 import { RouterModule, Router } from '@angular/router';
-
-import { Subscription,} from 'rxjs';
+import { Subscription } from 'rxjs';
 
 interface HeroProduct {
   id: number | string;
@@ -17,6 +16,9 @@ interface HeroProduct {
   imageUrl: string;
   description?: string;
   price: number;
+  averageRating: number;
+  reviewCount: number;
+  showRating: boolean;
   options: {
     option_group: string;
     option_value: string;
@@ -32,6 +34,9 @@ interface ApiProduct {
   imageUrl?: string;
   description?: string;
   price?: number | string;
+  average_rating?: number | string;
+  review_count?: number | string;
+  show_rating?: boolean | number;
   options?: {
     option_group?: string;
     option_value?: string;
@@ -52,7 +57,7 @@ interface ProductsResponse {
 
 @Component({
   selector: 'app-home',
-  standalone:true,
+  standalone: true,
   imports: [CommonModule, RouterModule],
   styleUrl: './home.css',
   templateUrl: './home.html',
@@ -62,11 +67,11 @@ export class Home implements OnInit, OnDestroy {
   private request?: Subscription;
   private timer?: ReturnType<typeof setInterval>;
   private cdr = inject(ChangeDetectorRef);
-  private router = inject(Router)
+  private router = inject(Router);
 
   // Backend API URL
   private readonly apiUrl =
-    'https://hafiz-gas-appliances-backend.onrender.com/api/products';
+    'http://localhost:3000/api/products';
 
   heroProducts: HeroProduct[] = [];
   currentIndex = 0;
@@ -78,44 +83,55 @@ export class Home implements OnInit, OnDestroy {
   }
 
   loadHeroProducts(): void {
-  this.loading = true;
-  this.errorMessage = '';
+    this.loading = true;
+    this.errorMessage = '';
 
-  this.http.get<ProductsResponse>(this.apiUrl).subscribe({
-    next: (response) => {
-      console.log('API RESPONSE:', response);
-      console.log('RESPONSE DATA:', response?.data);
+    this.request = this.http.get<ProductsResponse>(this.apiUrl).subscribe({
+      next: (response) => {
+        console.log('API RESPONSE:', response);
+        console.log('RESPONSE DATA:', response?.data);
 
-      const products = Array.isArray(response?.data)
-        ? response.data
-        : [];
+        const products = Array.isArray(response?.data)
+          ? response.data
+          : [];
 
-      this.heroProducts = products.map((product) => ({
-  id: product.id,
-  name: product.title || product.name || 'Product',
-  imageUrl: product.image_url || product.imageUrl || '',
-  description: product.description || '',
-  price: Number(product.price || 0),
-  options: (product.options || []).map((option) => ({
-    option_group: option.option_group || 'Option',
-    option_value: option.option_value || '',
-    extra_price: Number(option.extra_price || 0)
-  }))
-}));
+        this.heroProducts = products.map((product) => ({
+          id: product.id,
+          name: product.title || product.name || 'Product',
+          imageUrl: product.image_url || product.imageUrl || '',
+          description: product.description || '',
+          price: Number(product.price || 0),
 
-      this.loading = false;
-      this.cdr.detectChanges();
-      this.startAutoSlide();
+          averageRating: Number(product.average_rating || 0),
+          reviewCount: Number(product.review_count || 0),
 
-      console.log('Products count:', this.heroProducts.length);
-    },
-    error: (error) => {
-      console.error('PRODUCT API ERROR:', error);
-      this.errorMessage = `API error: ${error.status} ${error.statusText || ''}`;
-      this.loading = false;
-    }
-  });
-}
+          showRating:
+            (product.show_rating === true ||
+              product.show_rating === 1) &&
+            Number(product.average_rating || 0) >= 4 &&
+            Number(product.review_count || 0) >= 3,
+
+          options: (product.options || []).map((option) => ({
+            option_group: option.option_group || 'Option',
+            option_value: option.option_value || '',
+            extra_price: Number(option.extra_price || 0)
+          }))
+        }));
+
+        this.loading = false;
+        this.cdr.detectChanges();
+        this.startAutoSlide();
+
+        console.log('Products count:', this.heroProducts.length);
+      },
+      error: (error) => {
+        console.error('PRODUCT API ERROR:', error);
+        this.errorMessage =
+          `API error: ${error.status} ${error.statusText || ''}`;
+        this.loading = false;
+      }
+    });
+  }
 
   startAutoSlide(): void {
     this.stopAutoSlide();
@@ -135,8 +151,7 @@ export class Home implements OnInit, OnDestroy {
     }
 
     this.currentIndex =
-      (this.currentIndex + 1) %
-      this.heroProducts.length;
+      (this.currentIndex + 1) % this.heroProducts.length;
   }
 
   previousSlide(): void {
@@ -145,16 +160,12 @@ export class Home implements OnInit, OnDestroy {
     }
 
     this.currentIndex =
-      (this.currentIndex - 1 +
-        this.heroProducts.length) %
+      (this.currentIndex - 1 + this.heroProducts.length) %
       this.heroProducts.length;
   }
 
   goToSlide(index: number): void {
-    if (
-      index < 0 ||
-      index >= this.heroProducts.length
-    ) {
+    if (index < 0 || index >= this.heroProducts.length) {
       return;
     }
 
@@ -174,6 +185,6 @@ export class Home implements OnInit, OnDestroy {
   }
 
   orderNow(productId: number | string): void {
-  this.router.navigate(['/products', productId]);
-}
+    this.router.navigate(['/products', productId]);
+  }
 }

@@ -51,7 +51,7 @@ export class Dashboard implements OnInit {
     });
 
     this.http.get<DashboardStats>(
-        'https://hafiz-gas-appliances-backend.onrender.com/api/admin/dashboard-stats',
+        'http://localhost:3000/api/admin/dashboard-stats',
         { headers }
       )
       .subscribe({

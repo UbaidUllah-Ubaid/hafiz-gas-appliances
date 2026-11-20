@@ -1,37 +1,22 @@
 import express from 'express';
 import db from '../db.js';
 import { authenticateToken } from '../middleware/auth.js';
+import asyncHandler from '../middleware/async-handler.js';
 
 const router = express.Router();
 
-// Create a table for each customer's saved cart.
-db.exec(`
-  CREATE TABLE IF NOT EXISTS customer_carts (
-    user_id INTEGER PRIMARY KEY,
-    items TEXT NOT NULL DEFAULT '[]',
-    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-  )
-`);
-
 // Get the logged-in customer's saved cart.
-router.get('/', authenticateToken, (req, res, next) => {
-  try {
-    const cart = db.prepare(
-      'SELECT items FROM customer_carts WHERE user_id = ?'
-    ).get(req.user.id);
-
-    res.json({
-      items: cart ? JSON.parse(cart.items) : []
-    });
-  } catch (error) {
-    next(error);
-  }
-});
+router.get('/', authenticateToken, asyncHandler(async (req, res) => {
+  const result = await db.query(
+    'SELECT items FROM customer_carts WHERE user_id = $1',
+    [req.user.id]
+  );
+  const cart = result.rows[0];
+  res.json({ items: cart ? JSON.parse(cart.items) : [] });
+}));
 
 // Save the logged-in customer's cart.
-router.put('/', authenticateToken, (req, res, next) => {
-  try {
+router.put('/', authenticateToken, asyncHandler(async (req, res) => {
     const { items } = req.body || {};
 
     if (!Array.isArray(items) || items.length > 100) {
@@ -63,18 +48,15 @@ router.put('/', authenticateToken, (req, res, next) => {
 
     const savedItems = JSON.stringify(items);
 
-    db.prepare(`
+    await db.query(`
       INSERT INTO customer_carts (user_id, items, updated_at)
-      VALUES (?, ?, datetime('now'))
+      VALUES ($1, $2, to_char(CURRENT_TIMESTAMP, 'YYYY-MM-DD HH24:MI:SS'))
       ON CONFLICT(user_id) DO UPDATE SET
         items = excluded.items,
-        updated_at = datetime('now')
-    `).run(req.user.id, savedItems);
+        updated_at = to_char(CURRENT_TIMESTAMP, 'YYYY-MM-DD HH24:MI:SS')
+    `, [req.user.id, savedItems]);
 
     res.json({ message: 'Cart saved successfully.' });
-  } catch (error) {
-    next(error);
-  }
-});
+}));
 
 export default router;

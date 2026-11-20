@@ -1,286 +1,104 @@
-@if (showCartToast) {
-  <div class="cart-toast">
-    <span class="toast-check">✓</span>
+<!-- Product Reviews Section -->
+<section class="reviews-section">
+  <div class="reviews-heading">
+    <h2>Customer Reviews</h2>
 
-    <div class="toast-content">
-      <strong>Added to Cart!</strong>
-      <span>{{ cartToastMessage }}</span>
-    </div>
-
-    <button
-      type="button"
-      class="toast-close"
-      (click)="showCartToast = false"
-      aria-label="Close notification"
-    >
-      ×
-    </button>
+    @if (reviewCount > 0) {
+      <div class="reviews-summary">
+        <strong>{{ averageRating | number:'1.1-1' }} / 5</strong>
+        <span>★</span>
+        <small>{{ reviewCount }} review(s)</small>
+      </div>
+    } @else {
+      <p>Be the first to review this product.</p>
+    }
   </div>
-}
 
-
-
-
-<div class="details-page">
-  @if (loading) {
-    <div class="status-message">Product loading...</div>
-  } @else if (errorMessage || !product) {
-    <div class="status-message error">
-      {{ errorMessage || 'Product nahi mila.' }}
-    </div>
+  @if (reviewLoading) {
+    <p class="status-message">Loading reviews...</p>
   } @else {
-    <div class="product-layout">
-      <!-- Left Side: Images Gallery -->
-      <div class="gallery">
-        <div class="main-image">
-          @if (selectedImage) {
-            <img [src]="selectedImage" [alt]="productName" />
-          } @else {
-            <div class="no-image">No image available</div>
-          }
-        </div>
+    @if (reviews.length > 0) {
+      <div class="reviews-list">
+        @for (review of reviews; track review.id) {
+          <article class="review-card">
+            <div class="review-card-header">
+              <strong>{{ review.customer_name || 'Customer' }}</strong>
 
-        @if (images.length > 1) {
-          <div class="thumbnails">
-            @for (image of images; track $index) {
+              <span class="review-stars">
+                {{ '★'.repeat(review.rating) }}{{ '☆'.repeat(5 - review.rating) }}
+              </span>
+            </div>
+
+            <p>{{ review.comment || 'No written comment.' }}</p>
+
+            @if (canDeleteReview(review)) {
               <button
                 type="button"
-                class="thumbnail"
-                [class.active]="selectedImage === image"
-                (click)="selectImage(image)"
-              >
-                <img [src]="image" [alt]="productName + ' thumbnail'" />
+                class="review-delete-btn"
+                [disabled]="deletingReviewId === review.id"
+                (click)="deleteReview(review)">
+                {{ deletingReviewId === review.id ? 'Deleting...' : 'Delete Review' }}
               </button>
             }
-          </div>
-        }
-      </div>
-
-      <!-- Right Side: Product Information & Zero Lifestyle Style Variant Cards -->
-      <div class="product-info">
-        <div class="product-title-row">
-          
-  <h1>{{ productName }}
-    
-  </h1>
-
-  
-
-</div>
- 
-
-        <!-- Price & Badges Row -->
-        <div class="price-header-row">
-          <span class="current-price">Rs. {{ formatPrice(unitPrice) }}</span>
-          <span class="was-price">Rs. {{ formatPrice(basePrice * 1.2) }}</span>
-          <span class="save-badge">Save 16%</span>
-        </div>
-
-        
-        <!-- Grid Layout for Options (Left) and Price Summary (Right) -->
-        <div class="options-summary-grid">
-          <div class="selections-column">
-
-            <!-- 1. Color Variant Cards -->
-            @if (colors.length > 0) {
-              <div class="option-group">
-                <label class="group-title">Select Color:</label>
-                <div class="variant-cards-row">
-                  @for (color of colors; track color.option_value) {
-                    <div
-                      class="variant-card"
-                      [class.active]="selectedColor === color.option_value"
-                      (click)="selectColor(color.option_value)"
-                    >
-                      <span class="variant-name">{{ color.option_value }}</span>
-                      <span class="variant-price">
-                        @if (color.extra_price > 0) {
-                          +Rs. {{ formatPrice(color.extra_price) }}
-                        } @else {
-                          Included
-                        }
-                      </span>
-                    </div>
-                  }
-                </div>
-              </div>
-            }
-
-            <!-- 2. Size Variant Cards -->
-            @if (sizes.length > 0) {
-              <div class="option-group">
-                <label class="group-title">Select Size:</label>
-                <div class="variant-cards-row">
-                  @for (size of sizes; track size.option_value) {
-                    <div
-                      class="variant-card"
-                      [class.active]="selectedSize === size.option_value"
-                      (click)="selectSize(size.option_value)"
-                    >
-                      <span class="variant-name">{{ size.option_value }}</span>
-                      <span class="variant-price">
-                        @if (size.extra_price > 0) {
-                          +Rs. {{ formatPrice(size.extra_price) }}
-                        } @else {
-                          Included
-                        }
-                      </span>
-                    </div>
-                  }
-                </div>
-              </div>
-            }
-
-            <!-- 3. Gas Type Variant Cards -->
-            @if (gasTypes.length > 0) {
-              <div class="option-group">
-                <label class="group-title">Select Gas Type:</label>
-                <div class="variant-cards-row">
-                  @for (gas of gasTypes; track gas.option_value) {
-                    <div
-                      class="variant-card"
-                      [class.active]="selectedGasType === gas.option_value"
-                      (click)="selectGasType(gas.option_value)"
-                    >
-                      <span class="variant-name">{{ gas.option_value }}</span>
-                      <span class="variant-price">Standard</span>
-                    </div>
-                  }
-                </div>
-              </div>
-            }
-
-            <!-- Quantity Counter -->
-            <div class="quantity-section">
-              <label>Quantity:</label>
-              <div class="quantity-selector">
-                <button type="button" class="qty-btn" (click)="decreaseQty()">-</button>
-                <input type="text" class="qty-input" [(ngModel)]="quantity" readonly />
-                <button type="button" class="qty-btn" (click)="increaseQty()">+</button>
-              </div>
-
-              @if (isOutOfStock) {
-    <span class="stock-badge">OUT OF STOCK</span>
-  } @else {
-    <span class="stock-available">IN STOCK</span>
-  }
-
-             
-            </div>
-
-            <!-- Action Buttons -->
-           <div class="action-buttons">
-  <button
-    type="button"
-    class="btn-add-cart"
-    [disabled]="isOutOfStock"
-    (click)="addToCart()">
-    {{ isOutOfStock ? 'Out of Stock' : 'Add to Cart' }}
-  </button>
-
-  <button
-    type="button"
-    class="btn-buy-now"
-    [disabled]="isOutOfStock"
-    (click)="buyNow()">
-    {{ isOutOfStock ? 'Unavailable' : 'BUY NOW' }}
-  </button>
-</div>
-
-            <!-- Delivery & Seller Info -->
-            <div class="extra-meta">
-              <span>🚚 Delivery: Delivery back dongress</span>
-              <span>👤 Seller Info: Hafiz Gas Appliances</span>
-            </div>
-
-          </div>
-
-          <!-- Price Summary Box (Right Side) -->
-          <div class="summary-column">
-            <div class="price-summary-box">
-              <h3>PRICE SUMMARY</h3>
-
-              <div class="summary-row">
-                <span>Base Price</span>
-                <span>Rs. {{ formatPrice(basePrice) }}</span>
-              </div>
-
-              <div class="summary-row">
-                <span>{{ selectedColor || 'Color' }}</span>
-                <span>{{ colorCharge > 0 ? '+Rs. ' + formatPrice(colorCharge) : 'Included' }}</span>
-              </div>
-
-              <div class="summary-row">
-                <span>{{ selectedSize || 'Size' }}</span>
-                <span>{{ sizeCharge > 0 ? '+Rs. ' + formatPrice(sizeCharge) : 'Included' }}</span>
-              </div>
-
-              <div class="summary-row">
-                <span>Standard Delivery</span>
-                <span></span>
-              </div>
-
-              <div class="summary-row total-row">
-                <span>Subtotal:</span>
-                <span>Rs. {{ formatPrice(finalPrice) }}</span>
-              </div>
-
-              <p class="summary-note">
-                *Note: Additional service charges may be added during discussion, e.g., trip charges or special installation requirements.
-              </p>
-            </div>
-          </div>
-        </div>
-
-
-        @if (product.description) {
-          <p class="description"><strong>Description:</strong> {{ product.description }}</p>
-        }
-
-      </div>
-    </div>
-  }
-
-  <!-- Related Products Section (Unchanged) -->
-  <section class="related-section">
-    <div class="section-heading">
-      <h2>Our Products</h2>
-      <p>Explore more from HAFIZ GAS APPLIANCES</p>
-    </div>
-
-    @if (relatedLoading) {
-      <p class="status-message">Products loading...</p>
-    } @else if (relatedProducts.length > 0) {
-      <div class="related-grid">
-        @for (item of relatedProducts; track item.id) {
-          <a
-            class="related-card"
-            [routerLink]="['/products', item.id]"
-          >
-            <div class="related-image">
-              @if (relatedImage(item)) {
-                <img
-                  [src]="relatedImage(item)"
-                  [alt]="item.title || item.name || 'Product'"
-                  loading="lazy"
-                />
-              } @else {
-                <div class="no-image">No image available</div>
-              }
-            </div>
-
-            <div class="related-info">
-              <h3>{{ item.title || item.name || 'Product' }}</h3>
-              <p>Rs. {{ formatPrice(relatedPrice(item)) }}</p>
-              <span>View Details →</span>
-            </div>
-          </a>
+          </article>
         }
       </div>
     } @else {
-      <p class="status-message">
-        Abhi koi aur product available nahi hai.
-      </p>
+      <p class="no-reviews">No reviews yet. Share your experience!</p>
     }
-  </section>
-</div>
+  }
+
+  <div class="review-form">
+    <h3>{{ myReview ? 'Update Your Review' : 'Write a Review' }}</h3>
+
+    @if (isLoggedIn) {
+      <label class="review-label">Your Rating</label>
+
+      <div class="rating-selector">
+        @for (star of [1, 2, 3, 4, 5]; track star) {
+          <button
+            type="button"
+            [class.active]="star <= reviewRating"
+            (click)="setReviewRating(star)">
+            ★
+          </button>
+        }
+      </div>
+
+      <label class="review-label" for="reviewComment">
+        Your Comment
+      </label>
+
+      <textarea
+        id="reviewComment"
+        [(ngModel)]="reviewComment"
+        maxlength="2000"
+        placeholder="Share your experience with this product...">
+      </textarea>
+
+      @if (reviewSuccess) {
+        <p class="review-success">{{ reviewSuccess }}</p>
+      }
+
+      @if (reviewSubmitError) {
+        <p class="review-error">{{ reviewSubmitError }}</p>
+      }
+
+      <button
+        type="button"
+        class="review-submit-btn"
+        [disabled]="submittingReview"
+        (click)="submitReview()">
+        {{ submittingReview ? 'Submitting...' : (myReview ? 'Update Review' : 'Submit Review') }}
+      </button>
+    } @else {
+      <p class="login-review-message">
+        Please log in to submit a product review.
+      </p>
+
+      <a routerLink="/customerlogin" class="review-login-link">
+        Login to Review
+      </a>
+    }
+  </div>
+</section>

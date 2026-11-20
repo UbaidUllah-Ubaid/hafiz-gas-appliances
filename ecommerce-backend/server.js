@@ -13,7 +13,7 @@ import adminRoutes from './routes/admin.js';
 import contactRoutes from './routes/contact.js';
 import cartRoutes from './routes/cart.js';
 import swaggerSpec from './swagger.js';
-import db from './db.js';
+import db, { closeDb } from './db.js';
 
 
 const app = express();
@@ -110,22 +110,20 @@ app.use('/api/contact', contactRoutes);
 app.use('/api/cart', cartRoutes);
 
 // Health check
-app.get('/api/health', (req, res) => {
+app.get('/api/health', async (req, res) => {
   try {
-    db.prepare('SELECT 1 AS ok').get();
-
+    await db.query('SELECT 1 AS ok');
     res.json({
       status: 'ok',
       database: 'connected',
       time: new Date().toISOString()
     });
-  } catch (err) {
-    console.error('DATABASE HEALTH CHECK ERROR:', err);
-
+  } catch (error) {
+    console.error('DATABASE HEALTH CHECK ERROR:', error);
     res.status(503).json({
       status: 'error',
       database: 'unavailable',
-      error: err.message
+      error: error.message
     });
   }
 });
@@ -160,27 +158,36 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-const server = app.listen(PORT, () => {
-  console.log(
-    `HAFIZ GAS APPLIANCES API running at http://localhost:${PORT}\n` +
-    `Docs: http://localhost:${PORT}/api-docs`
-  );
-});
+let server;
+
+async function startServer() {
+  await db.query('SELECT 1 AS ok');
+  server = app.listen(PORT, () => {
+    console.log(
+      `HAFIZ GAS APPLIANCES API running at http://localhost:${PORT}\n` +
+      `Docs: http://localhost:${PORT}/api-docs`
+    );
+  });
+}
 
 // Graceful shutdown
 function shutdown() {
-  server.close(() => {
-    try {
-      db.close();
-    } finally {
-      process.exit(0);
-    }
-  });
+  if (!server) {
+    closeDb().finally(() => process.exit(0));
+    return;
+  }
+
+  server.close(() => closeDb().finally(() => process.exit(0)));
 
   setTimeout(() => process.exit(1), 10000).unref();
 }
 
 process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);
+
+startServer().catch(error => {
+  console.error('PostgreSQL connection failed:', error);
+  closeDb().finally(() => process.exit(1));
+});
 
 export default app;

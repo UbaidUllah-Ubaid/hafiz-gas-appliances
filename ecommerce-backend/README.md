@@ -1,6 +1,6 @@
 # HAFIZ GAS APPLIANCES — E-commerce Backend
 
-A REST API built with Node.js, Express, and **SQLite**. This project intentionally keeps SQLite as requested. It uses Node's built-in `node:sqlite` API, so use **Node.js 22.13+** (Node 22 LTS recommended).
+A REST API built with Node.js, Express, and **PostgreSQL**. Set `DATABASE_URL` to the Neon connection URL; never commit the URL or put it in source control.
 
 ## 1. Run locally
 
@@ -11,15 +11,21 @@ A REST API built with Node.js, Express, and **SQLite**. This project intentional
    ```bash
    npm install
    ```
-4. Copy `.env.example` to `.env` and set a long random `JWT_SECRET` (at least 32 characters). Set `CORS_ORIGINS=http://localhost:4200` for a default Angular dev server.
-5. Create an admin account:
+4. Copy `.env.example` to `.env`, set `DATABASE_URL` to your Neon PostgreSQL connection URL, and set a long random `JWT_SECRET` (at least 32 characters). Set `CORS_ORIGINS=http://localhost:4200` for a default Angular dev server.
+5. Apply the PostgreSQL schema explicitly:
+
+   ```bash
+   npm run db:migrate
+   ```
+
+6. Create an admin account only if one is needed:
 
    ```bash
    npm run create-admin
    ```
 
    Enter an email and a strong password of at least 12 characters. Alternatively set `ADMIN_NAME`, `ADMIN_EMAIL`, `ADMIN_PHONE`, and `ADMIN_PASSWORD` in your environment before running the command.
-6. Start the API:
+7. Start the API:
 
    ```bash
    npm run dev
@@ -29,9 +35,17 @@ A REST API built with Node.js, Express, and **SQLite**. This project intentional
 
 The API is at `http://localhost:3000`; Swagger docs are at `http://localhost:3000/api-docs`; health check is `http://localhost:3000/api/health`.
 
-## 2. SQLite database and persistence
+## 2. PostgreSQL schema and SQLite data import
 
-The database is created automatically at `./data/ecommerce.db` by default. Configure `DATABASE_PATH` to use another persistent path. Existing databases are migrated additively on startup; startup does not clear tables. Keep backups of the database and the `uploads` folder. On a hosting provider, use a persistent disk/volume for both paths—ephemeral filesystems may be wiped during redeployment.
+Schema changes are versioned in `migrations/` (including the unique customer/product review rule in `002_review_uniqueness.sql`) and are applied only by `npm run db:migrate`; the server does not run schema or data migrations at startup. The API checks the PostgreSQL connection before listening.
+
+The one-time importer reads the original `./data/ecommerce.db` in read-only mode and transfers users, products, options, reviews, orders, contacts, idempotency keys, password-reset records, and carts. Run it from this backend directory after applying the schema:
+
+```bash
+npm run db:import-sqlite
+```
+
+Set `SQLITE_DATABASE_PATH` only if the SQLite source is elsewhere. The import is one PostgreSQL transaction, preserves IDs and password hashes, updates ID sequences, records a migration marker, and refuses to import into non-empty tables. Re-running after a successful import reports the saved counts and makes no changes. The SQLite source file is not modified. Keep a separate backup of it and of uploaded images before migration.
 
 `npm run seed` is optional and **does not clear existing data**. It requires `SEED_ADMIN_PASSWORD` of at least 12 characters. It creates an admin only if the email is new and adds demo products only when no products exist. Demo products are not real HAFIZ GAS APPLIANCES inventory.
 
@@ -50,7 +64,10 @@ All request/response bodies are JSON unless an image upload uses multipart form 
 | POST | `/api/products` | Admin | Create product |
 | PUT | `/api/products/:id` | Admin | Update product |
 | DELETE | `/api/products/:id` | Admin | Delete product (blocked when order history references it) |
-| POST | `/api/products/:productId/reviews` | Login | Create review |
+| POST | `/api/products/:productId/reviews` | Login | Create or update own product review (1–5 stars; comment optional) |
+| DELETE | `/api/products/:productId/reviews/:reviewId` | Owner or admin | Delete a review |
+| GET | `/api/admin/reviews?page=1&limit=25` | Admin | List customer reviews |
+| DELETE | `/api/admin/reviews/:id` | Admin | Moderate/delete a review |
 | POST | `/api/orders` | Login | Create order |
 | GET | `/api/orders/my-orders` | Login | Current customer's orders |
 | GET | `/api/orders/:id` | Owner or admin | Order details |
@@ -114,7 +131,7 @@ The server recalculates totals from database prices and validates stock/options.
 
 ## 4. Frontend integration
 
-Set Angular's API base URL to `http://localhost:3000/api`. Example routes include `/products`, `/auth/login`, and `/orders`. Keep the returned JWT in your chosen frontend auth strategy and send it as `Authorization: Bearer <token>` for protected calls. Public product listing returns `{ data, pagination }`, not a bare array. Adjust your Angular service accordingly.
+Set Angular's API base URL to `http://localhost:3000/api`. Example routes include `/products`, `/auth/login`, and `/orders`. Keep the returned JWT in your chosen frontend auth strategy and send it as `Authorization: Bearer <token>` for protected calls. Public product listing returns `{ data, pagination }`, not a bare array. Each product now includes `average_rating`, `review_count`, and `show_rating`. Display the star badge only when `show_rating` is true (currently at least 3 reviews and a 4.0+ average). A registered customer can review any published product without purchase verification; one review per customer/product is allowed, and a later submission updates it.
 
 CORS origins are configured using `CORS_ORIGINS` as a comma-separated list. Do not use `*` in production. Use HTTPS and a long random JWT secret in production.
 
@@ -126,12 +143,14 @@ Uploaded images are stored on disk in `UPLOAD_DIR` (default `./uploads`) and ser
 
 - `npm run check` — syntax checks.
 - `npm test` — automated tests.
+- `npm run db:migrate` — apply versioned PostgreSQL schema migrations.
+- `npm run db:import-sqlite` — import the existing SQLite database once, without modifying its source.
 - `npm run create-admin` — create an admin account without clearing data.
 - `npm run seed` — optional non-destructive demo seed; requires `SEED_ADMIN_PASSWORD`.
 
-**Login fails:** confirm the API is running, use the exact email/password used by `npm run create-admin`, and check that `DATABASE_PATH` points to the same database for both commands and server. There is no default admin password.
+**Login fails:** confirm the API is connected to the expected Neon database and use the exact email/password for an imported account. The importer preserves existing password hashes. There is no default admin password.
 
-**Database error:** use Node.js 22.13+; verify that `DATABASE_PATH`'s parent directory is writable. Back up the `.db` file before manually changing it.
+**Database error:** check that `DATABASE_URL` is set and that Neon accepts connections from the current environment. Do not include the URL in logs or source control.
 
 **CORS error:** add the exact frontend origin (including port) to `CORS_ORIGINS` and restart the API.
 
@@ -140,7 +159,7 @@ Uploaded images are stored on disk in `UPLOAD_DIR` (default `./uploads`) and ser
 ## 7. Production checklist
 
 - Configure a strong secret and production CORS origins.
-- Use HTTPS and a persistent disk for SQLite and uploads; back both up regularly.
+- Use HTTPS and back up the Neon database and uploaded images regularly.
 - Configure a reverse proxy and monitor logs/health checks.
 - Verify backups and restore procedures.
 - Run `npm run check` and `npm test` before deploying.

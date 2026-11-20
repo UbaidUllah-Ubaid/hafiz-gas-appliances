@@ -2,7 +2,7 @@
   "name": "hafiz-gas-appliances-backend",
   "version": "2.0.0",
   "private": true,
-  "description": "SQLite-backed REST API for HAFIZ GAS APPLIANCES e-commerce website",
+  "description": "PostgreSQL-backed REST API for HAFIZ GAS APPLIANCES e-commerce website",
   "type": "module",
   "main": "server.js",
   "engines": {
@@ -11,9 +11,11 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
+    "db:migrate": "node migrate.js",
+    "db:import-sqlite": "node import-sqlite.js",
     "seed": "node seed.js",
     "create-admin": "node create-admin.js",
-    "check": "node --check server.js && node --check db.js && node --check routes/auth.js && node --check routes/products.js && node --check routes/orders.js && node --check routes/admin.js && node --check routes/reviews.js && node --check routes/contact.js && node --check middleware/auth.js",
+    "check": "node --check server.js && node --check db.js && node --check migrate.js && node --check import-sqlite.js && node --check migrations/runner.js && node --check routes/auth.js && node --check routes/products.js && node --check routes/orders.js && node --check routes/admin.js && node --check routes/reviews.js && node --check routes/contact.js && node --check routes/cart.js && node --check create-admin.js && node --check seed.js",
     "test": "node --test"
   },
   "dependencies": {
@@ -26,6 +28,7 @@
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.5.0",
     "nodemailer": "^10.3.1",
+    "pg": "^8.23.1",
     "swagger-ui-express": "^5.0.1"
   }
 }

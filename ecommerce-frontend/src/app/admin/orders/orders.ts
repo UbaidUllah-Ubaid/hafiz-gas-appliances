@@ -36,7 +36,7 @@ export class Orders implements OnInit {
   private cdr = inject(ChangeDetectorRef)
   readonly Object = Object;
 
-  private readonly apiUrl = 'https://hafiz-gas-appliances-backend.onrender.com/api/orders';
+  private readonly apiUrl = 'http://localhost:3000/api/orders';
 
   orders: CustomerOrder[] = [];
   loading = false;

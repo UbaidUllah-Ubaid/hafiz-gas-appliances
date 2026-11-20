@@ -5,6 +5,7 @@ import multer from 'multer';
 import path from 'node:path';
 import fs from 'node:fs';
 import crypto from 'node:crypto';
+import asyncHandler from '../middleware/async-handler.js';
 
 const router = express.Router();
 
@@ -61,35 +62,45 @@ function parseImages(product) {
   }
 }
 
-const getOptions = db.prepare(`
-  SELECT id, option_group, option_value, extra_price
-  FROM product_options
-  WHERE product_id = ?
-  ORDER BY id
-`);
-
-function productShape(product, includeReviews = false) {
+async function productShape(product, includeReviews = false) {
+  const ratingResult = await db.query(`
+    SELECT ROUND(AVG(rating)::numeric, 1) AS average_rating, COUNT(*)::INTEGER AS review_count
+    FROM reviews WHERE product_id = $1
+  `, [product.id]);
+  const averageRating = ratingResult.rows[0].average_rating === null
+    ? null : Number(ratingResult.rows[0].average_rating);
+  const reviewCount = Number(ratingResult.rows[0].review_count || 0);
+  const options = await db.query(`
+    SELECT id, option_group, option_value, extra_price
+    FROM product_options
+    WHERE product_id = $1
+    ORDER BY id
+  `, [product.id]);
   const shaped = {
     ...product,
     price: Number(product.price),
     stock: Number(product.stock),
     is_published: Boolean(product.is_published),
     images: parseImages(product),
-    options: getOptions.all(product.id).map(option => ({
+    options: options.rows.map(option => ({
       ...option,
       extra_price: Number(option.extra_price || 0),
     })),
+    average_rating: averageRating,
+    review_count: reviewCount,
+    show_rating: averageRating !== null && averageRating >= 4 && reviewCount >= 3,
   };
 
   if (includeReviews) {
-    shaped.reviews = db.prepare(`
+    const reviews = await db.query(`
       SELECT r.id, r.rating, r.comment, r.created_at,
              u.name AS user_name
       FROM reviews r
       JOIN users u ON u.id = r.user_id
-      WHERE r.product_id = ?
+      WHERE r.product_id = $1
       ORDER BY r.id DESC
-    `).all(product.id);
+    `, [product.id]);
+    shaped.reviews = reviews.rows;
   }
 
   return shaped;
@@ -208,24 +219,20 @@ function validateProduct(body) {
   return errors;
 }
 
-function saveOptions(productId, options) {
-  db.prepare(
-    'DELETE FROM product_options WHERE product_id = ?'
-  ).run(productId);
-
-  const insert = db.prepare(`
-    INSERT INTO product_options
-      (product_id, option_group, option_value, extra_price)
-    VALUES (?, ?, ?, ?)
-  `);
+async function saveOptions(client, productId, options) {
+  await client.query('DELETE FROM product_options WHERE product_id = $1', [productId]);
 
   for (const option of options || []) {
-    insert.run(
+    await client.query(`
+      INSERT INTO product_options
+        (product_id, option_group, option_value, extra_price)
+      VALUES ($1, $2, $3, $4)
+    `, [
       productId,
       option.option_group.trim(),
       option.option_value.trim(),
       Number(option.extra_price ?? 0)
-    );
+    ]);
   }
 }
 
@@ -293,7 +300,7 @@ router.post(
 );
 
 /* GET ALL PUBLISHED PRODUCTS */
-router.get('/', (req, res) => {
+router.get('/', asyncHandler(async (req, res) => {
   const page = Math.max(
     1,
     parseInt(req.query.page || '1', 10) || 1
@@ -319,14 +326,15 @@ router.get('/', (req, res) => {
     : '';
 
   if (search) {
+    const firstSearchParam = params.length + 1;
     where.push(
-      '(title LIKE ? OR description LIKE ? OR sku LIKE ?)'
+      `(title ILIKE $${firstSearchParam} OR description ILIKE $${firstSearchParam + 1} OR sku ILIKE $${firstSearchParam + 2})`
     );
     params.push(`%${search}%`, `%${search}%`, `%${search}%`);
   }
 
   if (category) {
-    where.push('category = ?');
+    where.push(`category = $${params.length + 1}`);
     params.push(category);
   }
 
@@ -334,55 +342,57 @@ router.get('/', (req, res) => {
     newest: 'id DESC',
     price_asc: 'price ASC, id DESC',
     price_desc: 'price DESC, id DESC',
-    title: 'title COLLATE NOCASE ASC',
+    title: 'LOWER(title) ASC',
   };
 
   const sort = sortMap[req.query.sort] || sortMap.newest;
 
-  const total = db.prepare(`
-    SELECT COUNT(*) AS count
+  const totalResult = await db.query(`
+    SELECT COUNT(*)::INTEGER AS count
     FROM products
     WHERE ${where.join(' AND ')}
-  `).get(...params).count;
+  `, params);
 
-  const rows = db.prepare(`
+  const limitIndex = params.length + 1;
+  const rows = await db.query(`
     SELECT *
     FROM products
     WHERE ${where.join(' AND ')}
     ORDER BY ${sort}
-    LIMIT ? OFFSET ?
-  `).all(...params, limit, (page - 1) * limit);
+    LIMIT $${limitIndex} OFFSET $${limitIndex + 1}
+  `, [...params, limit, (page - 1) * limit]);
 
   res.json({
-    data: rows.map(product => productShape(product)),
+    data: await Promise.all(rows.rows.map(product => productShape(product))),
     pagination: {
       page,
       limit,
-      total,
-      totalPages: Math.ceil(total / limit),
+      total: totalResult.rows[0].count,
+      totalPages: Math.ceil(totalResult.rows[0].count / limit),
     },
   });
-});
+}));
 
 /* GET ALL PRODUCTS FOR ADMIN — INCLUDING UNPUBLISHED */
-router.get('/admin/all', requireAdmin, (req, res) => {
-  const products = db.prepare(`
+router.get('/admin/all', requireAdmin, asyncHandler(async (_req, res) => {
+  const products = await db.query(`
     SELECT * FROM products
     ORDER BY id DESC
-  `).all();
+  `);
 
   res.json({
-    data: products.map(product => productShape(product))
+    data: await Promise.all(products.rows.map(product => productShape(product)))
   });
-});
+}));
 
 /* GET ONE PUBLISHED PRODUCT */
-router.get('/:id', (req, res) => {
-  const product = db.prepare(`
+router.get('/:id', asyncHandler(async (req, res) => {
+  const result = await db.query(`
     SELECT *
     FROM products
-    WHERE id = ? AND is_published = 1
-  `).get(req.params.id);
+    WHERE id = $1 AND is_published = 1
+  `, [req.params.id]);
+  const product = result.rows[0];
 
   if (!product) {
     return res.status(404).json({
@@ -390,12 +400,11 @@ router.get('/:id', (req, res) => {
     });
   }
 
-  res.json(productShape(product, true));
-});
+  res.json(await productShape(product, true));
+}));
 
 /* CREATE PRODUCT */
-router.post('/', requireAdmin, (req, res, next) => {
-  try {
+router.post('/', requireAdmin, asyncHandler(async (req, res) => {
     const body = req.body || {};
     const errors = validateProduct(body);
 
@@ -409,54 +418,67 @@ router.post('/', requireAdmin, (req, res, next) => {
     const images = normalizeImages(body);
     const mainImage = images[0] || null;
 
-    const result = db.prepare(`
-      INSERT INTO products
-        (title, sku, description, price, stock, image_url,
-         images, category, is_published)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      body.title.trim(),
-      body.sku.trim(),
-      body.description.trim(),
-      Number(body.price),
-      Number(body.stock),
-      mainImage,
-      JSON.stringify(images),
-      typeof body.category === 'string'
-        ? body.category.trim()
-        : null,
-      body.is_published === false ||
-      body.is_published === 0 ||
-      body.is_published === 'false'
-        ? 0
-        : 1
-    );
+    const client = await db.connect();
+    let transactionStarted = false;
+    let product;
+    try {
+      await client.query('BEGIN');
+      transactionStarted = true;
+      const result = await client.query(`
+        INSERT INTO products
+          (title, sku, description, price, stock, image_url,
+           images, category, is_published)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        RETURNING id
+      `, [
+        body.title.trim(),
+        body.sku.trim(),
+        body.description.trim(),
+        Number(body.price),
+        Number(body.stock),
+        mainImage,
+        JSON.stringify(images),
+        typeof body.category === 'string'
+          ? body.category.trim()
+          : null,
+        body.is_published === false ||
+        body.is_published === 0 ||
+        body.is_published === 'false'
+          ? 0
+          : 1
+      ]);
 
-    const productId = Number(result.lastInsertRowid);
-
-    saveOptions(productId, body.options || []);
-
-    const product = db.prepare(
-      'SELECT * FROM products WHERE id = ?'
-    ).get(productId);
+      const productId = result.rows[0].id;
+      await saveOptions(client, productId, body.options || []);
+      const savedProduct = await client.query(
+        'SELECT * FROM products WHERE id = $1',
+        [productId]
+      );
+      product = savedProduct.rows[0];
+      await client.query('COMMIT');
+      transactionStarted = false;
+    } catch (error) {
+      if (transactionStarted) {
+        await client.query('ROLLBACK');
+      }
+      throw error;
+    } finally {
+      client.release();
+    }
 
     res.status(201).json({
       message: 'Product created successfully',
-      product: productShape(product),
+      product: await productShape(product),
     });
-  } catch (err) {
-    if (String(err.message).includes('UNIQUE')) {
-      return res.status(409).json({
-        error: 'SKU already exists',
-      });
-    }
-
-    next(err);
+}, (error, _req, res, next) => {
+  if (error.code === '23505') {
+    return res.status(409).json({ error: 'SKU already exists' });
   }
-});
+  next(error);
+}));
 
 /* UPDATE PRODUCT */
-router.put('/:id', requireAdmin, (req, res, next) => {
+router.put('/:id', requireAdmin, asyncHandler(async (req, res, next) => {
   try {
     const id = Number(req.params.id);
 
@@ -466,9 +488,11 @@ router.put('/:id', requireAdmin, (req, res, next) => {
       });
     }
 
-    const existing = db.prepare(
-      'SELECT * FROM products WHERE id = ?'
-    ).get(id);
+    const existingResult = await db.query(
+      'SELECT * FROM products WHERE id = $1',
+      [id]
+    );
+    const existing = existingResult.rows[0];
 
     if (!existing) {
       return res.status(404).json({
@@ -496,16 +520,20 @@ router.put('/:id', requireAdmin, (req, res, next) => {
     const images = normalizeImages(merged);
     const mainImage = images[0] || null;
 
-    db.exec('BEGIN IMMEDIATE');
-
+    const client = await db.connect();
+    let transactionStarted = false;
+    let product;
     try {
-      db.prepare(`
+      await client.query('BEGIN');
+      transactionStarted = true;
+      await client.query(`
         UPDATE products
-        SET title = ?, sku = ?, description = ?, price = ?,
-            stock = ?, image_url = ?, images = ?, category = ?,
-            is_published = ?, updated_at = datetime('now')
-        WHERE id = ?
-      `).run(
+        SET title = $1, sku = $2, description = $3, price = $4,
+            stock = $5, image_url = $6, images = $7, category = $8,
+            is_published = $9,
+            updated_at = to_char(CURRENT_TIMESTAMP, 'YYYY-MM-DD HH24:MI:SS')
+        WHERE id = $10
+      `, [
         merged.title.trim(),
         merged.sku.trim(),
         merged.description.trim(),
@@ -520,28 +548,34 @@ router.put('/:id', requireAdmin, (req, res, next) => {
           ? 0
           : 1,
         id
-      );
+      ]);
 
       if (body.options !== undefined) {
-        saveOptions(id, body.options);
+        await saveOptions(client, id, body.options);
       }
 
-      db.exec('COMMIT');
+      const savedProduct = await client.query(
+        'SELECT * FROM products WHERE id = $1',
+        [id]
+      );
+      product = savedProduct.rows[0];
+      await client.query('COMMIT');
+      transactionStarted = false;
     } catch (err) {
-      db.exec('ROLLBACK');
+      if (transactionStarted) {
+        await client.query('ROLLBACK');
+      }
       throw err;
+    } finally {
+      client.release();
     }
-
-    const product = db.prepare(
-      'SELECT * FROM products WHERE id = ?'
-    ).get(id);
 
     res.json({
       message: 'Product updated successfully',
-      product: productShape(product),
+      product: await productShape(product),
     });
   } catch (err) {
-    if (String(err.message).includes('UNIQUE')) {
+    if (err.code === '23505') {
       return res.status(409).json({
         error: 'SKU already exists',
       });
@@ -549,18 +583,16 @@ router.put('/:id', requireAdmin, (req, res, next) => {
 
     next(err);
   }
-});
+}));
 
 /* DELETE PRODUCT */
-router.delete('/:id', requireAdmin, (req, res, next) => {
+router.delete('/:id', requireAdmin, asyncHandler(async (req, res, next) => {
   const id = Number(req.params.id);
 
   try {
-    const result = db.prepare(
-      'DELETE FROM products WHERE id = ?'
-    ).run(id);
+    const result = await db.query('DELETE FROM products WHERE id = $1', [id]);
 
-    if (!result.changes) {
+    if (!result.rowCount) {
       return res.status(404).json({
         error: 'Product not found',
       });
@@ -570,7 +602,7 @@ router.delete('/:id', requireAdmin, (req, res, next) => {
       message: 'Product deleted successfully',
     });
   } catch (err) {
-    if (String(err.message).includes('FOREIGN KEY')) {
+    if (err.code === '23503') {
       return res.status(409).json({
         error: 'Product has order history and cannot be deleted.',
       });
@@ -578,6 +610,6 @@ router.delete('/:id', requireAdmin, (req, res, next) => {
 
     next(err);
   }
-});
+}));
 
 export default router;

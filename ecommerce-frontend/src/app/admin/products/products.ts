@@ -40,7 +40,7 @@ export class Products implements OnInit {
   console.log('1. Products component started');
 
   this.http
-    .get<ProductsResponse>('https://hafiz-gas-appliances-backend.onrender.com/api/products')
+    .get<ProductsResponse>('http://localhost:3000/api/products')
     .subscribe({
       next: (response) => {
         console.log('2. Products response:', response);

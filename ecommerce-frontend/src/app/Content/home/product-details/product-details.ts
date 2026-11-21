@@ -16,6 +16,7 @@ import {
   CartItem,
   CartServices
 } from '../cart/cartServices/cart-services';
+import { environment } from '../../../../environments/environment';
 
 interface ProductOption {
   id: number;
@@ -61,10 +62,10 @@ interface OptionGroup {
 })
 export class ProductDetails implements OnInit {
   private readonly apiUrl =
-    'https://hafiz-gas-appliances.onrender.com/api/products';
+    `${environment.apiUrl}/api/products`;
 
   private readonly serverUrl =
-    'https://hafiz-gas-appliances.onrender.com';
+    `${environment.serverUrl}`;
 
   private readonly http = inject(HttpClient);
   private readonly route = inject(ActivatedRoute);
@@ -132,22 +133,27 @@ export class ProductDetails implements OnInit {
   }
 
   private loadProduct(id: string): void {
-    this.loading = true;
-    this.pageError = '';
+  this.loading = true;
+  this.pageError = '';
+  this.product = null;
 
-    this.http.get<any>(
-      `${this.apiUrl}/${encodeURIComponent(id)}`
-    ).subscribe({
-      next: response => {
+  this.http.get<any>(
+    `${this.apiUrl}/${encodeURIComponent(id)}`
+  ).subscribe({
+    next: response => {
+      console.log('PRODUCT API RESPONSE:', response);
+
+      try {
         const data =
           response?.data?.product ??
           response?.data ??
           response?.product ??
           response;
 
-        if (!data || !data.id) {
+        if (!data || data.id == null) {
           this.product = null;
           this.pageError = 'Product not found.';
+          console.error('Invalid product response:', response);
           this.loading = false;
           this.cdr.markForCheck();
           return;
@@ -169,22 +175,28 @@ export class ProductDetails implements OnInit {
         this.loadReviews(String(data.id));
         this.loadRelatedProducts(String(data.id));
 
-        this.loading = false;
-        this.cdr.markForCheck();
-      },
-
-      error: error => {
-        console.error('Unable to load product:', error);
-
-        this.pageError = error?.status === 404
-          ? 'This product could not be found.'
-          : 'Unable to load this product. Please try again.';
-
+      } catch (error) {
+        console.error('PRODUCT PROCESSING ERROR:', error);
+        this.product = null;
+        this.pageError =
+          'Product data processing failed. Check browser console.';
+      } finally {
         this.loading = false;
         this.cdr.markForCheck();
       }
-    });
-  }
+    },
+
+    error: error => {
+      console.error('PRODUCT API ERROR:', error);
+
+      this.pageError =
+        `Product request failed. HTTP Status: ${error?.status || 'Unknown'}`;
+
+      this.loading = false;
+      this.cdr.markForCheck();
+    }
+  });
+}
 
   private parseImages(
     rawImages: unknown,
@@ -352,7 +364,7 @@ export class ProductDetails implements OnInit {
             (item: Product) =>
               String(item.id) !== currentId
           )
-          .slice(0, 4)
+          .slice(0, 12)
           .map((item: Product) => ({
             ...item,
             images: this.parseImages(

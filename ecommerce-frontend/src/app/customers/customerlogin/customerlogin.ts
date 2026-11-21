@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Router, RouterModule } from '@angular/router';
 import { CartServices } from '../../Content/home/cart/cartServices/cart-services';
+import { environment } from '../../../environments/environment';
 
 interface AuthResponse {
   message: string;
@@ -37,7 +38,7 @@ export class Customerlogin {
   private cartService = inject(CartServices);
   private cdr = inject(ChangeDetectorRef);
 
-  private readonly apiUrl = 'https://hafiz-gas-appliances.onrender.com/api/auth';
+  private readonly apiUrl = `${environment.apiUrl}/api/auth`;
 
   mode: AuthMode = 'login';
 
@@ -270,14 +271,18 @@ export class Customerlogin {
     this.loading = true;
 
     this.http.post<ApiMessageResponse>(
-      `${this.apiUrl}/reset-password`,
-      {
-        resetToken: this.resetToken,
-        password: this.password
-      }
-    ).subscribe({
+  `${this.apiUrl}/reset-password`,
+  {
+    email: this.email.trim().toLowerCase(),
+    resetToken: this.resetToken,
+    password: this.password,
+    confirmPassword: this.confirmPassword
+  }
+)
+    .subscribe({
       next: (response) => {
         this.loading = false;
+        this.cdr.detectChanges();
         this.mode = 'login';
 
         this.password = '';
@@ -290,6 +295,7 @@ export class Customerlogin {
       },
       error: (error) => {
         this.loading = false;
+        this.cdr.detectChanges();
         this.errorMessage =
           error.error?.error ||
           'Unable to reset password. Please try again.';

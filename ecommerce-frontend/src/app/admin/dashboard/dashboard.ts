@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { environment } from '../../../environments/environment';
 
 interface DashboardStats {
   products: {
@@ -51,7 +52,7 @@ export class Dashboard implements OnInit {
     });
 
     this.http.get<DashboardStats>(
-        'https://hafiz-gas-appliances.onrender.com/api/admin/dashboard-stats',
+        `${environment.apiUrl}/api/admin/dashboard-stats`,
         { headers }
       )
       .subscribe({

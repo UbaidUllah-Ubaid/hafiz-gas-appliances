@@ -10,10 +10,8 @@
     </div>
   } @else {
 
-    <!-- PRODUCT DETAILS -->
     <section class="product-main">
 
-      <!-- LEFT: PRODUCT IMAGES -->
       <div class="product-gallery">
 
         <div class="main-image-wrap">
@@ -32,7 +30,6 @@
 
         @if (images.length > 1) {
           <div class="thumbnail-list">
-
             @for (image of images; track image) {
               <button
                 type="button"
@@ -41,19 +38,14 @@
                 (click)="selectImage(image)"
                 aria-label="View product image"
               >
-                <img
-                  [src]="image"
-                  [alt]="product.title"
-                >
+                <img [src]="image" [alt]="product.title">
               </button>
             }
-
           </div>
         }
 
       </div>
 
-      <!-- RIGHT: PRODUCT INFORMATION -->
       <div class="product-info">
 
         <p class="product-category">
@@ -63,19 +55,13 @@
         <h1>{{ product.title }}</h1>
 
         <div class="product-rating-line">
-
           @if (reviewCount > 0) {
             <span class="rating-stars">★</span>
-            <strong>
-              {{ averageRating | number:'1.1-1' }}
-            </strong>
+            <strong>{{ averageRating | number:'1.1-1' }}</strong>
             <span>{{ reviewCount }} reviews</span>
           } @else {
-            <span class="no-rating">
-              No reviews yet
-            </span>
+            <span class="no-rating">No reviews yet</span>
           }
-
         </div>
 
         <div class="product-price">
@@ -97,42 +83,47 @@
           {{ hasStock ? 'In Stock' : 'Out of Stock' }}
         </div>
 
-        <!-- DYNAMIC PRODUCT OPTIONS -->
-        @for (group of optionGroups; track group.name) {
+       <!-- DYNAMIC PRODUCT OPTIONS -->
+@for (group of optionGroups; track group.name) {
 
-          <div class="option-group">
+  <div class="option-group">
 
-            <label [for]="'option-' + group.name">
-              {{ group.name }}
-            </label>
+    <label>{{ group.name }}</label>
 
-            <select
-              [id]="'option-' + group.name"
-              [value]="selectedOptions[group.name]?.id"
-              (change)="onOptionChange(
-                group.name,
-                $any($event.target).value
-              )"
-            >
+    <div class="option-choices">
 
-              @for (option of group.options; track option.id) {
-                <option [value]="option.id">
+      @for (option of group.options; track option.id) {
 
-                  {{ option.option_value }}
+        <button
+          type="button"
+          class="option-choice"
+          [class.selected]="selectedOptions[group.name]?.id === option.id"
+          (click)="onOptionChange(group.name, option.id.toString())"
+        >
 
-                  @if (option.extra_price > 0) {
-                    (+ Rs.
-                    {{ option.extra_price | number:'1.0-0' }})
-                  }
+          <span class="option-choice-name">
+            {{ option.option_value }}
+          </span>
 
-                </option>
-              }
+          @if (option.extra_price > 0) {
+            <span class="option-choice-price">
+              + Rs. {{ option.extra_price | number:'1.0-0' }}
+            </span>
+          } @else {
+            <span class="option-choice-price">
+              Included
+            </span>
+          }
 
-            </select>
+        </button>
 
-          </div>
+      }
 
-        }
+    </div>
+
+  </div>
+
+}
 
         <button
           type="button"
@@ -140,6 +131,24 @@
           [disabled]="!hasStock || addingToCart"
           (click)="addToCart()"
         >
+          @if (!addingToCart && hasStock) {
+            <svg
+              class="cart-icon"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="9" cy="21" r="1"/>
+              <circle cx="20" cy="21" r="1"/>
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+            </svg>
+          }
+
           {{
             addingToCart
               ? 'Adding...'
@@ -150,32 +159,24 @@
         </button>
 
         @if (cartMessage) {
-          <p class="cart-message">
-            {{ cartMessage }}
-          </p>
+          <p class="cart-message">{{ cartMessage }}</p>
         }
 
       </div>
 
     </section>
 
-    <!-- PRODUCT DESCRIPTION -->
     <section class="description-section">
-
       <h2>Product Description</h2>
-
       <p>{{ product.description }}</p>
-
     </section>
 
-    <!-- CUSTOMER REVIEWS -->
     <section
       class="reviews-section"
       id="customer-reviews"
     >
 
       <div class="section-heading">
-
         <div>
           <h2>Customer Reviews</h2>
           <p>Customer feedback about this product</p>
@@ -183,23 +184,13 @@
 
         @if (reviewCount > 0) {
           <div class="reviews-average">
-
-            <strong>
-              {{ averageRating | number:'1.1-1' }}
-            </strong>
-
+            <strong>{{ averageRating | number:'1.1-1' }}</strong>
             <span>★</span>
-
-            <small>
-              {{ reviewCount }} reviews
-            </small>
-
+            <small>{{ reviewCount }} reviews</small>
           </div>
         }
-
       </div>
 
-      <!-- LOGGED-IN CUSTOMER -->
       @if (isLoggedIn) {
 
         <form
@@ -209,16 +200,13 @@
 
           <h3>Write a Review</h3>
 
-          <label class="rating-label">
-            Your Rating
-          </label>
+          <label class="rating-label">Your Rating</label>
 
           <div
             class="rating-picker"
             role="group"
             aria-label="Select rating"
           >
-
             @for (star of stars; track star) {
               <button
                 type="button"
@@ -230,12 +218,9 @@
                 ★
               </button>
             }
-
           </div>
 
-          <label for="review-comment">
-            Your Review
-          </label>
+          <label for="review-comment">Your Review</label>
 
           <textarea
             id="review-comment"
@@ -247,15 +232,11 @@
           ></textarea>
 
           @if (reviewSubmitError) {
-            <p class="form-error">
-              {{ reviewSubmitError }}
-            </p>
+            <p class="form-error">{{ reviewSubmitError }}</p>
           }
 
           @if (reviewSuccess) {
-            <p class="form-success">
-              {{ reviewSuccess }}
-            </p>
+            <p class="form-success">{{ reviewSuccess }}</p>
           }
 
           <button
@@ -274,75 +255,55 @@
 
       } @else {
 
-        <!-- GUEST CUSTOMER -->
         <div class="review-login-prompt">
-
           <p>
             Please log in to write a review for this product.
           </p>
 
           <button
             type="button"
+            class="login-review-button"
             (click)="goToLogin()"
           >
             Login to Review
           </button>
-
         </div>
 
       }
 
-      <!-- EXISTING REVIEWS -->
       <div class="review-list">
 
         @if (reviewLoading) {
-
-          <p class="review-empty">
-            Loading reviews...
-          </p>
-
+          <p class="review-empty">Loading reviews...</p>
         } @else if (reviews.length === 0) {
-
           <p class="review-empty">
             No customer reviews yet.
             Be the first to review this product.
           </p>
-
         } @else {
 
           @for (review of reviews; track review.id) {
-
             <article class="review-card">
 
               <div class="review-card-top">
-
-                <strong>
-                  {{ review.user_name || 'Customer' }}
-                </strong>
-
-                <time>
-                  {{ formatDate(review.created_at) }}
-                </time>
-
+                <strong>{{ review.user_name || 'Customer' }}</strong>
+                <time>{{ formatDate(review.created_at) }}</time>
               </div>
 
               <div
                 class="review-card-stars"
                 [attr.aria-label]="review.rating + ' out of 5 stars'"
               >
-
                 @for (star of stars; track star) {
                   <span [class.filled]="star <= review.rating">
                     ★
                   </span>
                 }
-
               </div>
 
               <p>{{ review.comment }}</p>
 
             </article>
-
           }
 
         }
@@ -351,9 +312,7 @@
 
     </section>
 
-    <!-- RELATED PRODUCTS -->
     @if (relatedProducts.length > 0) {
-
       <section class="related-section">
 
         <h2>Related Products</h2>
@@ -361,7 +320,6 @@
         <div class="related-grid">
 
           @for (item of relatedProducts; track item.id) {
-
             <article
               class="related-card"
               (click)="openRelatedProduct(item.id)"
@@ -373,7 +331,6 @@
               >
 
               <div class="related-card-info">
-
                 <h3>{{ item.title }}</h3>
 
                 <p>
@@ -389,17 +346,13 @@
                 >
                   View Details
                 </button>
-
               </div>
 
             </article>
-
           }
 
         </div>
-
       </section>
-
     }
 
   }

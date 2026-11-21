@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { RouterModule } from '@angular/router';
+import { environment } from '../../../../environments/environment';
 
 interface OrderItem {
   product_title?: string;
@@ -28,7 +29,7 @@ export class MyOrders implements OnInit {
   private http = inject(HttpClient);
   private cdr = inject(ChangeDetectorRef)
 
-  private readonly apiUrl = 'https://hafiz-gas-appliances.onrender.com/api/orders/my-orders';
+  private readonly apiUrl = `${environment.apiUrl}/api/orders/my-orders`;
 
   orders: CustomerOrder[] = [];
   loading = true;

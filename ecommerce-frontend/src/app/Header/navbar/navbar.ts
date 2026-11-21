@@ -15,6 +15,7 @@ import { Subscription } from 'rxjs';
 
 import { CartServices } from '../../Content/home/cart/cartServices/cart-services';
 import { Product, ProductService } from '../../sevices/product';
+import { environment } from '../../../environments/environment';
 // import { ProductService, Product } from '../../product-services/product-service';
 
 @Component({
@@ -47,7 +48,7 @@ export class Navbar implements OnInit, OnDestroy {
   showSearchResults = false;
   searching = false;
 
-  private serverUrl = 'https://hafiz-gas-appliances.onrender.com';
+  private serverUrl = environment.serverUrl;
 
   ngOnInit(): void {
     this.loadProducts();

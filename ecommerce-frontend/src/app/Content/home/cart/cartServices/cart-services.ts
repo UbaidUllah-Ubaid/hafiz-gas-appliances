@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../../../environments/environment';
 
 export interface CartItem {
   id: string;
@@ -23,7 +24,7 @@ interface SavedCartResponse {
 })
 export class CartServices {
   private readonly storageKey = 'hafiz_gas_cart';
-  private readonly apiUrl = 'https://hafiz-gas-appliances.onrender.com/api/cart';
+  private readonly apiUrl = `${environment.apiUrl}/api/cart`;
 
   private http = inject(HttpClient);
 

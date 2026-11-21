@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { environment } from '../../../environments/environment';
 
 interface ProductOption {
   option_group: string;
@@ -27,7 +28,7 @@ export class AddProduct {
   private http = inject(HttpClient);
   private router = inject(Router);
 
-  private readonly apiUrl = 'https://hafiz-gas-appliances.onrender.com/api/products';
+  private readonly apiUrl = `${environment.apiUrl}/api/products`;
 
   saving = false;
   uploading = false;

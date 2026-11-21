@@ -2,6 +2,7 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { environment } from '../../../../environments/environment';
 
 interface UserProfile {
   id: number;
@@ -20,7 +21,7 @@ interface UserProfile {
   styleUrl: './profile.css'
 })
 export class Profile implements OnInit {
-  private readonly API_URL = 'https://hafiz-gas-appliances.onrender.com/api/auth';
+  private readonly API_URL = `${environment.apiUrl}/api/auth`;
 
   profile: UserProfile = {
     id: 0,

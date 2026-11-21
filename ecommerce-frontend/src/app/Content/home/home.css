@@ -287,14 +287,22 @@
 }
 
 .rating-stars {
-  color: #ff8a00;
-  font-size: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  color: #d1d5db;
+  font-size: 17px;
   line-height: 1;
+}
+
+.rating-stars span.filled {
+  color: #f59e0b;
 }
 
 .rating-number {
   color: #252525;
   font-weight: 700;
+  font-size: 13px;
 }
 
 .rating-count {

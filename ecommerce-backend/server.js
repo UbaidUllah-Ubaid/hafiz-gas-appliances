@@ -22,9 +22,9 @@ const PORT = Number(process.env.PORT) || 3000;
 const origins = (
   process.env.CORS_ORIGINS ||
   [
-    'http://localhost:4200',
+    'http://localhost:3000',
     'http://127.0.0.1:4200',
-    'https://hafiz-gas-appliances.onrender.com',
+    'http://localhost:3000',
     'http://127.0.0.1:3000',
     'http://localhost:63587',
     'http://localhost:59641',

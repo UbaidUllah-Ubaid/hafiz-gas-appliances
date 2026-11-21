@@ -1,5 +1,6 @@
 import { Component, OnInit, inject,ChangeDetectorRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 interface Product {
   id: number;
@@ -40,7 +41,7 @@ export class Products implements OnInit {
   console.log('1. Products component started');
 
   this.http
-    .get<ProductsResponse>('https://hafiz-gas-appliances.onrender.com/api/products')
+    .get<ProductsResponse>(`${environment.apiUrl}/api/products`)
     .subscribe({
       next: (response) => {
         console.log('2. Products response:', response);

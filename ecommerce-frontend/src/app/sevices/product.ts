@@ -2,6 +2,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export interface Product {
   id: number;
@@ -23,7 +24,7 @@ export interface Product {
 export class ProductService {
   private http = inject(HttpClient);
 
-  private apiUrl = 'https://hafiz-gas-appliances.onrender.com/api/products';
+  private apiUrl = `${environment.apiUrl}/api/products`;
 
   getProducts(): Observable<Product[]> {
     return this.http.get<Product[]>(this.apiUrl);

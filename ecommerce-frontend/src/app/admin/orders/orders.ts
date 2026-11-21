@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { timeout } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 interface OrderItem {
   title?: string;
@@ -36,7 +37,7 @@ export class Orders implements OnInit {
   private cdr = inject(ChangeDetectorRef)
   readonly Object = Object;
 
-  private readonly apiUrl = 'https://hafiz-gas-appliances.onrender.com/api/orders';
+  private readonly apiUrl = `${environment.apiUrl}/api/orders`;
 
   orders: CustomerOrder[] = [];
   loading = false;

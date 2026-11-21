@@ -4,6 +4,7 @@ import { RouterModule, Router } from '@angular/router';
 import { FormsModule, NgForm } from '@angular/forms';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { CartItem, CartServices } from './cartServices/cart-services';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-cart',
@@ -30,7 +31,7 @@ export class Cart implements OnInit {
   orderError = '';
 
   items: CartItem[] = [];
-  readonly serverUrl = 'https://hafiz-gas-appliances.onrender.com';
+  readonly serverUrl = environment.serverUrl;
 
   ngOnInit(): void {
     this.cartService.cart$.subscribe(items => {

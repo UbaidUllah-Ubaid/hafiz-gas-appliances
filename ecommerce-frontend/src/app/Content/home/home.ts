@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 import { RouterModule, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 interface HeroProduct {
   id: number | string;
@@ -71,12 +72,20 @@ export class Home implements OnInit, OnDestroy {
 
   // Backend API URL
   private readonly apiUrl =
-    'https://hafiz-gas-appliances.onrender.com/api/products';
+    `${environment.apiUrl}/api/products`;
+
+    readonly serverUrl = environment.serverUrl;
 
   heroProducts: HeroProduct[] = [];
   currentIndex = 0;
   loading = true;
   errorMessage = '';
+  readonly ratingStars = [1, 2, 3, 4, 5];
+
+
+  roundRating(rating: number): number {
+  return Math.round(rating);
+}
 
   ngOnInit(): void {
     this.loadHeroProducts();
@@ -106,10 +115,8 @@ export class Home implements OnInit, OnDestroy {
           reviewCount: Number(product.review_count || 0),
 
           showRating:
-            (product.show_rating === true ||
-              product.show_rating === 1) &&
-            Number(product.average_rating || 0) >= 4 &&
-            Number(product.review_count || 0) >= 3,
+  Number(product.review_count || 0) > 0 &&
+  Number(product.average_rating || 0) > 0,
 
           options: (product.options || []).map((option) => ({
             option_group: option.option_group || 'Option',

@@ -5,6 +5,7 @@ import { Component, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { environment } from '../../../environments/environment';
 
 interface LoginResponse {
   token?: string;
@@ -43,7 +44,7 @@ isLoggingIn = false;
     this.loading = true;
 
     this.http.post<LoginResponse>(
-      'https://hafiz-gas-appliances.onrender.com/api/auth/login',
+      `${environment.apiUrl}/api/auth/login`,
       {
         email: this.email.trim(),
         password: this.password,

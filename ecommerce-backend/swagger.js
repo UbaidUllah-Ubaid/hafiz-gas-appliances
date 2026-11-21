@@ -5,7 +5,7 @@ const swaggerSpec = {
     version: '2.0.0',
     description: 'PostgreSQL-backed e-commerce API. Admin routes require a Bearer JWT.'
   },
-  servers: [{ url: 'https://hafiz-gas-appliances.onrender.com' }],
+  servers: [{ url: 'http://localhost:3000' }],
   components: {
     securitySchemes: {
       bearerAuth: {

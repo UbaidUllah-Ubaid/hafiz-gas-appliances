@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, ChangeDetectorRef, inject } from '@angula
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 interface ProductOption {
   id?: number;
@@ -35,8 +36,8 @@ export class ProductsUpdate implements OnInit, OnDestroy {
   private http = inject(HttpClient);
   private cdr = inject(ChangeDetectorRef);
 
-  private readonly apiUrl = 'https://hafiz-gas-appliances.onrender.com/api/products';
-  private readonly backendUrl = 'https://hafiz-gas-appliances.onrender.com';
+  private readonly apiUrl = `${environment.apiUrl}/api/products`;
+  private readonly backendUrl = environment.serverUrl;
 
   products: Product[] = [];
 

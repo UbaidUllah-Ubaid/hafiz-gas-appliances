@@ -23,7 +23,7 @@ interface SavedCartResponse {
 })
 export class CartServices {
   private readonly storageKey = 'hafiz_gas_cart';
-  private readonly apiUrl = 'http://localhost:3000/api/cart';
+  private readonly apiUrl = 'http://https://hafiz-gas-appliances.onrender.com/api/cart';
 
   private http = inject(HttpClient);
 

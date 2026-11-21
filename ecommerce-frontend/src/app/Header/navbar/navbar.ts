@@ -47,7 +47,7 @@ export class Navbar implements OnInit, OnDestroy {
   showSearchResults = false;
   searching = false;
 
-  private serverUrl = 'http://localhost:3000';
+  private serverUrl = 'http://https://hafiz-gas-appliances.onrender.com';
 
   ngOnInit(): void {
     this.loadProducts();

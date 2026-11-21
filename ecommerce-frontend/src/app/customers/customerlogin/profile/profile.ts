@@ -20,7 +20,7 @@ interface UserProfile {
   styleUrl: './profile.css'
 })
 export class Profile implements OnInit {
-  private readonly API_URL = 'http://localhost:3000/api/auth';
+  private readonly API_URL = 'http://https://hafiz-gas-appliances.onrender.com/api/auth';
 
   profile: UserProfile = {
     id: 0,

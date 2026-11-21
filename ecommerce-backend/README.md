@@ -33,7 +33,7 @@ A REST API built with Node.js, Express, and **PostgreSQL**. Set `DATABASE_URL` t
 
    Production-style local start: `npm start`.
 
-The API is at `http://localhost:3000`; Swagger docs are at `http://localhost:3000/api-docs`; health check is `http://localhost:3000/api/health`.
+The API is at `http://https://hafiz-gas-appliances.onrender.com`; Swagger docs are at `http://https://hafiz-gas-appliances.onrender.com/api-docs`; health check is `http://https://hafiz-gas-appliances.onrender.com/api/health`.
 
 ## 2. PostgreSQL schema and SQLite data import
 
@@ -91,7 +91,7 @@ Admin endpoints require `Authorization: Bearer YOUR_JWT_TOKEN`.
   "price": 18500,
   "stock": 10,
   "category": "Gas Appliances",
-  "images": ["http://localhost:3000/uploads/example.webp"],
+  "images": ["http://https://hafiz-gas-appliances.onrender.com/uploads/example.webp"],
   "options": [
     { "option_group": "Finish", "option_value": "Black", "extra_price": 0 }
   ]
@@ -131,7 +131,7 @@ The server recalculates totals from database prices and validates stock/options.
 
 ## 4. Frontend integration
 
-Set Angular's API base URL to `http://localhost:3000/api`. Example routes include `/products`, `/auth/login`, and `/orders`. Keep the returned JWT in your chosen frontend auth strategy and send it as `Authorization: Bearer <token>` for protected calls. Public product listing returns `{ data, pagination }`, not a bare array. Each product now includes `average_rating`, `review_count`, and `show_rating`. Display the star badge only when `show_rating` is true (currently at least 3 reviews and a 4.0+ average). A registered customer can review any published product without purchase verification; one review per customer/product is allowed, and a later submission updates it.
+Set Angular's API base URL to `http://https://hafiz-gas-appliances.onrender.com/api`. Example routes include `/products`, `/auth/login`, and `/orders`. Keep the returned JWT in your chosen frontend auth strategy and send it as `Authorization: Bearer <token>` for protected calls. Public product listing returns `{ data, pagination }`, not a bare array. Each product now includes `average_rating`, `review_count`, and `show_rating`. Display the star badge only when `show_rating` is true (currently at least 3 reviews and a 4.0+ average). A registered customer can review any published product without purchase verification; one review per customer/product is allowed, and a later submission updates it.
 
 CORS origins are configured using `CORS_ORIGINS` as a comma-separated list. Do not use `*` in production. Use HTTPS and a long random JWT secret in production.
 

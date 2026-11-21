@@ -37,7 +37,7 @@ export class Customerlogin {
   private cartService = inject(CartServices);
   private cdr = inject(ChangeDetectorRef);
 
-  private readonly apiUrl = 'http://https://hafiz-gas-appliances.onrender.com/api/auth';
+  private readonly apiUrl = 'https://hafiz-gas-appliances.onrender.com/api/auth';
 
   mode: AuthMode = 'login';
 

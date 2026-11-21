@@ -5,7 +5,7 @@ Angular frontend for the Hafiz Gas Appliances ecommerce application.
 ## Requirements
 
 - Node.js and npm
-- The backend API running at `http://https://hafiz-gas-appliances.onrender.com` for API-powered features
+- The backend API running at `https://hafiz-gas-appliances.onrender.com` for API-powered features
 
 The API address is currently configured in the frontend source. Start the backend separately before using features that load or update server data.
 

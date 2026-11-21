@@ -71,7 +71,7 @@ export class Home implements OnInit, OnDestroy {
 
   // Backend API URL
   private readonly apiUrl =
-    'http://https://hafiz-gas-appliances.onrender.com/api/products';
+    'https://hafiz-gas-appliances.onrender.com/api/products';
 
   heroProducts: HeroProduct[] = [];
   currentIndex = 0;

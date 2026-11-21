@@ -27,7 +27,7 @@ export class AddProduct {
   private http = inject(HttpClient);
   private router = inject(Router);
 
-  private readonly apiUrl = 'http://https://hafiz-gas-appliances.onrender.com/api/products';
+  private readonly apiUrl = 'https://hafiz-gas-appliances.onrender.com/api/products';
 
   saving = false;
   uploading = false;

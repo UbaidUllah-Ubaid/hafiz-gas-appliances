@@ -28,7 +28,7 @@ export class MyOrders implements OnInit {
   private http = inject(HttpClient);
   private cdr = inject(ChangeDetectorRef)
 
-  private readonly apiUrl = 'http://https://hafiz-gas-appliances.onrender.com/api/orders/my-orders';
+  private readonly apiUrl = 'https://hafiz-gas-appliances.onrender.com/api/orders/my-orders';
 
   orders: CustomerOrder[] = [];
   loading = true;

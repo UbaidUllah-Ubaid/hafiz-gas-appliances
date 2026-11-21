@@ -30,7 +30,7 @@ export class Cart implements OnInit {
   orderError = '';
 
   items: CartItem[] = [];
-  readonly serverUrl = 'http://https://hafiz-gas-appliances.onrender.com';
+  readonly serverUrl = 'https://hafiz-gas-appliances.onrender.com';
 
   ngOnInit(): void {
     this.cartService.cart$.subscribe(items => {

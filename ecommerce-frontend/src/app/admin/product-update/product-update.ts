@@ -35,8 +35,8 @@ export class ProductsUpdate implements OnInit, OnDestroy {
   private http = inject(HttpClient);
   private cdr = inject(ChangeDetectorRef);
 
-  private readonly apiUrl = 'http://https://hafiz-gas-appliances.onrender.com/api/products';
-  private readonly backendUrl = 'http://https://hafiz-gas-appliances.onrender.com';
+  private readonly apiUrl = 'https://hafiz-gas-appliances.onrender.com/api/products';
+  private readonly backendUrl = 'https://hafiz-gas-appliances.onrender.com';
 
   products: Product[] = [];
 

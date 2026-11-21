@@ -1,104 +1,407 @@
-<!-- Product Reviews Section -->
-<section class="reviews-section">
-  <div class="reviews-heading">
-    <h2>Customer Reviews</h2>
+<main class="product-details-page">
 
-    @if (reviewCount > 0) {
-      <div class="reviews-summary">
-        <strong>{{ averageRating | number:'1.1-1' }} / 5</strong>
-        <span>★</span>
-        <small>{{ reviewCount }} review(s)</small>
-      </div>
-    } @else {
-      <p>Be the first to review this product.</p>
-    }
-  </div>
-
-  @if (reviewLoading) {
-    <p class="status-message">Loading reviews...</p>
+  @if (loading) {
+    <div class="state-message">
+      Loading product...
+    </div>
+  } @else if (pageError || !product) {
+    <div class="state-message error-message">
+      {{ pageError || 'Product not found.' }}
+    </div>
   } @else {
-    @if (reviews.length > 0) {
-      <div class="reviews-list">
-        @for (review of reviews; track review.id) {
-          <article class="review-card">
-            <div class="review-card-header">
-              <strong>{{ review.customer_name || 'Customer' }}</strong>
 
-              <span class="review-stars">
-                {{ '★'.repeat(review.rating) }}{{ '☆'.repeat(5 - review.rating) }}
-              </span>
+    <!-- PRODUCT DETAILS -->
+    <section class="product-main">
+
+      <!-- LEFT: PRODUCT IMAGES -->
+      <div class="product-gallery">
+
+        <div class="main-image-wrap">
+          @if (selectedImage) {
+            <img
+              class="main-product-image"
+              [src]="selectedImage"
+              [alt]="product.title"
+            >
+          } @else {
+            <div class="image-placeholder">
+              No image available
             </div>
+          }
+        </div>
 
-            <p>{{ review.comment || 'No written comment.' }}</p>
+        @if (images.length > 1) {
+          <div class="thumbnail-list">
 
-            @if (canDeleteReview(review)) {
+            @for (image of images; track image) {
               <button
                 type="button"
-                class="review-delete-btn"
-                [disabled]="deletingReviewId === review.id"
-                (click)="deleteReview(review)">
-                {{ deletingReviewId === review.id ? 'Deleting...' : 'Delete Review' }}
+                class="thumbnail-button"
+                [class.active]="selectedImage === image"
+                (click)="selectImage(image)"
+                aria-label="View product image"
+              >
+                <img
+                  [src]="image"
+                  [alt]="product.title"
+                >
               </button>
             }
-          </article>
+
+          </div>
         }
+
       </div>
-    } @else {
-      <p class="no-reviews">No reviews yet. Share your experience!</p>
-    }
-  }
 
-  <div class="review-form">
-    <h3>{{ myReview ? 'Update Your Review' : 'Write a Review' }}</h3>
+      <!-- RIGHT: PRODUCT INFORMATION -->
+      <div class="product-info">
 
-    @if (isLoggedIn) {
-      <label class="review-label">Your Rating</label>
+        <p class="product-category">
+          {{ product.category }}
+        </p>
 
-      <div class="rating-selector">
-        @for (star of [1, 2, 3, 4, 5]; track star) {
+        <h1>{{ product.title }}</h1>
+
+        <div class="product-rating-line">
+
+          @if (reviewCount > 0) {
+            <span class="rating-stars">★</span>
+            <strong>
+              {{ averageRating | number:'1.1-1' }}
+            </strong>
+            <span>{{ reviewCount }} reviews</span>
+          } @else {
+            <span class="no-rating">
+              No reviews yet
+            </span>
+          }
+
+        </div>
+
+        <div class="product-price">
+          Rs. {{ finalPrice | number:'1.0-0' }}
+        </div>
+
+        <p
+          class="base-price-note"
+          [class.hidden]="finalPrice === product.price"
+        >
+          Base price:
+          Rs. {{ product.price | number:'1.0-0' }}
+        </p>
+
+        <div
+          class="stock-status"
+          [class.out-of-stock]="!hasStock"
+        >
+          {{ hasStock ? 'In Stock' : 'Out of Stock' }}
+        </div>
+
+        <!-- DYNAMIC PRODUCT OPTIONS -->
+        @for (group of optionGroups; track group.name) {
+
+          <div class="option-group">
+
+            <label [for]="'option-' + group.name">
+              {{ group.name }}
+            </label>
+
+            <select
+              [id]="'option-' + group.name"
+              [value]="selectedOptions[group.name]?.id"
+              (change)="onOptionChange(
+                group.name,
+                $any($event.target).value
+              )"
+            >
+
+              @for (option of group.options; track option.id) {
+                <option [value]="option.id">
+
+                  {{ option.option_value }}
+
+                  @if (option.extra_price > 0) {
+                    (+ Rs.
+                    {{ option.extra_price | number:'1.0-0' }})
+                  }
+
+                </option>
+              }
+
+            </select>
+
+          </div>
+
+        }
+
+        <button
+          type="button"
+          class="add-cart-button"
+          [disabled]="!hasStock || addingToCart"
+          (click)="addToCart()"
+        >
+          {{
+            addingToCart
+              ? 'Adding...'
+              : hasStock
+                ? 'Add to Cart'
+                : 'Out of Stock'
+          }}
+        </button>
+
+        @if (cartMessage) {
+          <p class="cart-message">
+            {{ cartMessage }}
+          </p>
+        }
+
+      </div>
+
+    </section>
+
+    <!-- PRODUCT DESCRIPTION -->
+    <section class="description-section">
+
+      <h2>Product Description</h2>
+
+      <p>{{ product.description }}</p>
+
+    </section>
+
+    <!-- CUSTOMER REVIEWS -->
+    <section
+      class="reviews-section"
+      id="customer-reviews"
+    >
+
+      <div class="section-heading">
+
+        <div>
+          <h2>Customer Reviews</h2>
+          <p>Customer feedback about this product</p>
+        </div>
+
+        @if (reviewCount > 0) {
+          <div class="reviews-average">
+
+            <strong>
+              {{ averageRating | number:'1.1-1' }}
+            </strong>
+
+            <span>★</span>
+
+            <small>
+              {{ reviewCount }} reviews
+            </small>
+
+          </div>
+        }
+
+      </div>
+
+      <!-- LOGGED-IN CUSTOMER -->
+      @if (isLoggedIn) {
+
+        <form
+          class="review-form"
+          (ngSubmit)="submitReview()"
+        >
+
+          <h3>Write a Review</h3>
+
+          <label class="rating-label">
+            Your Rating
+          </label>
+
+          <div
+            class="rating-picker"
+            role="group"
+            aria-label="Select rating"
+          >
+
+            @for (star of stars; track star) {
+              <button
+                type="button"
+                class="rating-star"
+                [class.selected]="star <= reviewRating"
+                (click)="setReviewRating(star)"
+                [attr.aria-label]="star + ' stars'"
+              >
+                ★
+              </button>
+            }
+
+          </div>
+
+          <label for="review-comment">
+            Your Review
+          </label>
+
+          <textarea
+            id="review-comment"
+            name="reviewComment"
+            [(ngModel)]="reviewComment"
+            rows="4"
+            placeholder="Share your experience with this product..."
+            required
+          ></textarea>
+
+          @if (reviewSubmitError) {
+            <p class="form-error">
+              {{ reviewSubmitError }}
+            </p>
+          }
+
+          @if (reviewSuccess) {
+            <p class="form-success">
+              {{ reviewSuccess }}
+            </p>
+          }
+
+          <button
+            class="submit-review-button"
+            type="submit"
+            [disabled]="submittingReview"
+          >
+            {{
+              submittingReview
+                ? 'Submitting...'
+                : 'Submit Review'
+            }}
+          </button>
+
+        </form>
+
+      } @else {
+
+        <!-- GUEST CUSTOMER -->
+        <div class="review-login-prompt">
+
+          <p>
+            Please log in to write a review for this product.
+          </p>
+
           <button
             type="button"
-            [class.active]="star <= reviewRating"
-            (click)="setReviewRating(star)">
-            ★
+            (click)="goToLogin()"
+          >
+            Login to Review
           </button>
+
+        </div>
+
+      }
+
+      <!-- EXISTING REVIEWS -->
+      <div class="review-list">
+
+        @if (reviewLoading) {
+
+          <p class="review-empty">
+            Loading reviews...
+          </p>
+
+        } @else if (reviews.length === 0) {
+
+          <p class="review-empty">
+            No customer reviews yet.
+            Be the first to review this product.
+          </p>
+
+        } @else {
+
+          @for (review of reviews; track review.id) {
+
+            <article class="review-card">
+
+              <div class="review-card-top">
+
+                <strong>
+                  {{ review.user_name || 'Customer' }}
+                </strong>
+
+                <time>
+                  {{ formatDate(review.created_at) }}
+                </time>
+
+              </div>
+
+              <div
+                class="review-card-stars"
+                [attr.aria-label]="review.rating + ' out of 5 stars'"
+              >
+
+                @for (star of stars; track star) {
+                  <span [class.filled]="star <= review.rating">
+                    ★
+                  </span>
+                }
+
+              </div>
+
+              <p>{{ review.comment }}</p>
+
+            </article>
+
+          }
+
         }
+
       </div>
 
-      <label class="review-label" for="reviewComment">
-        Your Comment
-      </label>
+    </section>
 
-      <textarea
-        id="reviewComment"
-        [(ngModel)]="reviewComment"
-        maxlength="2000"
-        placeholder="Share your experience with this product...">
-      </textarea>
+    <!-- RELATED PRODUCTS -->
+    @if (relatedProducts.length > 0) {
 
-      @if (reviewSuccess) {
-        <p class="review-success">{{ reviewSuccess }}</p>
-      }
+      <section class="related-section">
 
-      @if (reviewSubmitError) {
-        <p class="review-error">{{ reviewSubmitError }}</p>
-      }
+        <h2>Related Products</h2>
 
-      <button
-        type="button"
-        class="review-submit-btn"
-        [disabled]="submittingReview"
-        (click)="submitReview()">
-        {{ submittingReview ? 'Submitting...' : (myReview ? 'Update Review' : 'Submit Review') }}
-      </button>
-    } @else {
-      <p class="login-review-message">
-        Please log in to submit a product review.
-      </p>
+        <div class="related-grid">
 
-      <a routerLink="/customerlogin" class="review-login-link">
-        Login to Review
-      </a>
+          @for (item of relatedProducts; track item.id) {
+
+            <article
+              class="related-card"
+              (click)="openRelatedProduct(item.id)"
+            >
+
+              <img
+                [src]="relatedImage(item)"
+                [alt]="item.title"
+              >
+
+              <div class="related-card-info">
+
+                <h3>{{ item.title }}</h3>
+
+                <p>
+                  Rs. {{ item.price | number:'1.0-0' }}
+                </p>
+
+                <button
+                  type="button"
+                  (click)="
+                    $event.stopPropagation();
+                    openRelatedProduct(item.id)
+                  "
+                >
+                  View Details
+                </button>
+
+              </div>
+
+            </article>
+
+          }
+
+        </div>
+
+      </section>
+
     }
-  </div>
-</section>
+
+  }
+
+</main>

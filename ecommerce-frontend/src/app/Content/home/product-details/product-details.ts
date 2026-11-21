@@ -1,22 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-
-import { CartServices, CartItem } from '../cart/cartServices/cart-services';
-import { Router } from '@angular/router';
-
-import {
-  Component,
-  OnDestroy,
-  OnInit,
-  inject,
-  ChangeDetectorRef
-} from '@angular/core';
-
-import { ActivatedRoute, RouterModule } from '@angular/router';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Subscription } from 'rxjs';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { CartItem, CartServices } from '../cart/cartServices/cart-services';
 
 interface ProductOption {
+  id: number;
   option_group: string;
   option_value: string;
   extra_price: number;
@@ -24,615 +14,263 @@ interface ProductOption {
 
 interface Product {
   id: number | string;
-  title?: string;
-  name?: string;
-  description?: string;
-  price?: number | string;
-  image_url?: string;
-  imageUrl?: string;
-  images?: string[] | string;
-  options?: ProductOption[] | unknown;
+  title: string;
+  description: string;
+  price: number;
+  stock: number;
+  image_url: string | null;
+  images: string[] | string | null;
   category?: string;
-  is_published?: boolean | number;
-  stock?: number | string;
+  options: ProductOption[];
+  average_rating?: number | null;
+  review_count?: number;
+  reviews?: Review[];
 }
 
-interface CustomerUser {
-  id: number | string;
-  name?: string;
-  email?: string;
-  role?: string;
-}
-
-interface ProductReview {
-  id: number | string;
-  product_id: number | string;
-  user_id: number | string;
+interface Review {
+  id: number;
   rating: number;
   comment: string;
-  customer_name?: string;
-  created_at?: string;
+  created_at: string;
+  user_name?: string;
+}
+
+interface OptionGroup {
+  name: string;
+  options: ProductOption[];
 }
 
 @Component({
   selector: 'app-product-details',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './product-details.html',
-  styleUrl: './product-details.css',
+  styleUrl: './product-details.css'
 })
-export class ProductDetails implements OnInit, OnDestroy {
-  private http = inject(HttpClient);
-  private route = inject(ActivatedRoute);
-  private cdr = inject(ChangeDetectorRef);
-  private cartServices = inject(CartServices);
-  private router = inject(Router);
-
+export class ProductDetails implements OnInit {
   private readonly apiUrl =
-    'https://hafiz-gas-appliances-backend.onrender.com/api/products';
+    'https://hafiz-gas-appliances.onrender.com/api/products';
 
   private readonly serverUrl =
-    'https://hafiz-gas-appliances-backend.onrender.com';
+    'https://hafiz-gas-appliances.onrender.com';
 
-  private routeSubscription?: Subscription;
-  private productSubscription?: Subscription;
-  private relatedSubscription?: Subscription;
-  private reviewsSubscription?: Subscription;
-  private submitReviewSubscription?: Subscription;
-  private deleteReviewSubscription?: Subscription;
+  private readonly http = inject(HttpClient);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly cartService = inject(CartServices);
 
   product: Product | null = null;
   relatedProducts: Product[] = [];
-
-  loading = true;
-  relatedLoading = true;
-  errorMessage = '';
-
   images: string[] = [];
   selectedImage = '';
 
-  selectedColor = '';
-  selectedSize = '';
-  selectedGasType = '';
-  quantity = 1;
+  optionGroups: OptionGroup[] = [];
+  selectedOptions: Record<string, ProductOption> = {};
 
-  // Product Reviews
-  reviews: ProductReview[] = [];
-  reviewLoading = false;
-  reviewError = '';
+  loading = true;
+  pageError = '';
+  addingToCart = false;
+  cartMessage = '';
 
+  reviews: Review[] = [];
   averageRating = 0;
   reviewCount = 0;
-
+  reviewLoading = false;
   reviewRating = 5;
   reviewComment = '';
-
   submittingReview = false;
-  deletingReviewId: number | string | null = null;
-
   reviewSuccess = '';
   reviewSubmitError = '';
 
-  currentUser: CustomerUser | null = null;
+  readonly stars = [1, 2, 3, 4, 5];
 
-  ngOnInit(): void {
-    this.loadCurrentUser();
-
-    this.routeSubscription = this.route.paramMap.subscribe(params => {
-      const id = params.get('id');
-
-      if (!id) {
-        this.loading = false;
-        this.errorMessage = 'Product ID nahi mila.';
-        return;
-      }
-
-      this.product = null;
-      this.errorMessage = '';
-      this.reviews = [];
-      this.averageRating = 0;
-      this.reviewCount = 0;
-      this.reviewRating = 5;
-      this.reviewComment = '';
-      this.reviewSuccess = '';
-      this.reviewSubmitError = '';
-
-      this.loadProduct(id);
-      this.loadRelatedProducts(id);
-      this.loadReviews(id);
-    });
-  }
-
-  ngOnDestroy(): void {
-    this.routeSubscription?.unsubscribe();
-    this.productSubscription?.unsubscribe();
-    this.relatedSubscription?.unsubscribe();
-    this.reviewsSubscription?.unsubscribe();
-    this.submitReviewSubscription?.unsubscribe();
-    this.deleteReviewSubscription?.unsubscribe();
-
-    if (this.toastTimer) {
-      clearTimeout(this.toastTimer);
-    }
-  }
-
-  get productName(): string {
-    return this.product?.title || this.product?.name || 'Product';
-  }
-
-  get stockQuantity(): number {
-    return Number(this.product?.stock ?? 0);
-  }
-
-  get isOutOfStock(): boolean {
-    return this.stockQuantity <= 0;
-  }
-
-  private normalizeOptionGroup(group: unknown): string {
-    return String(group ?? '')
-      .trim()
-      .toLowerCase()
-      .replace(/[_-]+/g, ' ')
-      .replace(/\s+/g, ' ');
-  }
-
-  get options(): ProductOption[] {
-    const rawOptions = this.product?.options;
-
-    if (!Array.isArray(rawOptions)) return [];
-
-    return rawOptions
-      .map((option: any): ProductOption => ({
-        option_group: String(
-          option?.option_group ?? option?.group ?? ''
-        ).trim(),
-
-        option_value: String(
-          option?.option_value ?? option?.value ?? ''
-        ).trim(),
-
-        extra_price: Number(
-          option?.extra_price ?? option?.price ?? 0
-        )
-      }))
-      .filter(option => option.option_group && option.option_value);
-  }
-
-  get colors(): ProductOption[] {
-    return this.options.filter(option =>
-      ['color', 'colour', 'colors', 'colours'].includes(
-        this.normalizeOptionGroup(option.option_group)
-      )
-    );
-  }
-
-  get sizes(): ProductOption[] {
-    return this.options.filter(option =>
-      ['size', 'sizes', 'capacity'].includes(
-        this.normalizeOptionGroup(option.option_group)
-      )
-    );
-  }
-
-  get gasTypes(): ProductOption[] {
-    return this.options.filter(option =>
-      ['gas type', 'gas types', 'gastype', 'gas'].includes(
-        this.normalizeOptionGroup(option.option_group)
-      )
-    );
-  }
-
-  get selectedColorOption(): ProductOption | undefined {
-    return this.colors.find(
-      color => color.option_value === this.selectedColor
-    );
-  }
-
-  get selectedSizeOption(): ProductOption | undefined {
-    return this.sizes.find(
-      size => size.option_value === this.selectedSize
-    );
-  }
-
-  get basePrice(): number {
-    return Number(this.product?.price ?? 0);
-  }
-
-  get colorCharge(): number {
-    return Number(this.selectedColorOption?.extra_price ?? 0);
-  }
-
-  get sizeCharge(): number {
-    return Number(this.selectedSizeOption?.extra_price ?? 0);
-  }
-
-  get unitPrice(): number {
-    return this.basePrice + this.colorCharge + this.sizeCharge;
+  get isLoggedIn(): boolean {
+    return !!localStorage.getItem('hafiz_gas_token');
   }
 
   get finalPrice(): number {
-    return this.unitPrice * this.quantity;
+    if (!this.product) return 0;
+
+    const extras = Object.values(this.selectedOptions)
+      .reduce(
+        (total, option) => total + Number(option.extra_price || 0),
+        0
+      );
+
+    return Number(this.product.price || 0) + extras;
   }
 
-  // Authentication
-  private loadCurrentUser(): void {
-    try {
-      const storedUser = localStorage.getItem('hafiz_gas_user');
-      this.currentUser = storedUser ? JSON.parse(storedUser) : null;
-    } catch {
-      this.currentUser = null;
-    }
+  get hasStock(): boolean {
+    return Number(this.product?.stock || 0) > 0;
   }
 
-  get isLoggedIn(): boolean {
-    return !!(
-      localStorage.getItem('hafiz_gas_token') &&
-      this.currentUser?.id
-    );
+  ngOnInit(): void {
+    this.route.paramMap.subscribe(params => {
+      const id = params.get('id');
+
+      if (id) {
+        this.loadProduct(id);
+      } else {
+        this.loading = false;
+        this.pageError = 'Product ID was not found.';
+      }
+    });
   }
 
-  get myReview(): ProductReview | undefined {
-    if (!this.currentUser?.id) return undefined;
-
-    return this.reviews.find(
-      review => String(review.user_id) === String(this.currentUser?.id)
-    );
-  }
-
-  canDeleteReview(review: ProductReview): boolean {
-    if (!this.currentUser?.id) return false;
-
-    const isAdmin = this.currentUser.role === 'admin';
-
-    const isOwner =
-      String(review.user_id) === String(this.currentUser.id);
-
-    return isAdmin || isOwner;
-  }
-
-  // Load Product
-  loadProduct(id: string): void {
+  private loadProduct(id: string): void {
     this.loading = true;
-    this.errorMessage = '';
+    this.pageError = '';
 
-    this.productSubscription?.unsubscribe();
+    this.http.get<any>(
+      `${this.apiUrl}/${encodeURIComponent(id)}`
+    ).subscribe({
+      next: response => {
+        const data =
+          response?.data?.product ??
+          response?.data ??
+          response?.product ??
+          response;
 
-    this.productSubscription = this.http
-      .get<any>(`${this.apiUrl}/${encodeURIComponent(id)}`)
-      .subscribe({
-        next: response => {
-          const loadedProduct =
-            response?.data || response?.product || response;
-
-          this.product = loadedProduct as Product;
-
-          this.prepareImages(this.product);
-          this.setDefaultSelections();
-
+        if (!data || !data.id) {
+          this.product = null;
+          this.pageError = 'Product not found.';
           this.loading = false;
-          this.cdr.detectChanges();
-        },
-
-        error: () => {
-          this.errorMessage = 'Product load nahi hua.';
-          this.loading = false;
-          this.cdr.detectChanges();
+          return;
         }
-      });
+
+        this.product = data as Product;
+
+        this.images = this.parseImages(
+          data.images,
+          data.image_url
+        );
+
+        this.selectedImage = this.images[0] || '';
+
+        this.buildOptionGroups(
+          Array.isArray(data.options) ? data.options : []
+        );
+
+        this.loadReviews(String(data.id));
+        this.loadRelatedProducts(String(data.id));
+
+        this.loading = false;
+      },
+
+      error: error => {
+        console.error('Unable to load product:', error);
+
+        this.pageError = error?.status === 404
+          ? 'This product could not be found.'
+          : 'Unable to load this product. Please try again.';
+
+        this.loading = false;
+      }
+    });
   }
 
-  // Load Related Products
-  loadRelatedProducts(currentId: string): void {
-    this.relatedLoading = true;
-    this.relatedSubscription?.unsubscribe();
+  private parseImages(
+    rawImages: unknown,
+    fallback: string | null
+  ): string[] {
+    let values: unknown[] = [];
 
-    this.relatedSubscription = this.http
-      .get<any>(this.apiUrl)
-      .subscribe({
-        next: response => {
-          const products = Array.isArray(response)
-            ? response
-            : response?.data || response?.products || [];
-
-          this.relatedProducts = products.filter(
-            (p: Product) => String(p.id) !== String(currentId)
-          );
-
-          this.relatedLoading = false;
-          this.cdr.detectChanges();
-        },
-
-        error: () => {
-          this.relatedProducts = [];
-          this.relatedLoading = false;
-          this.cdr.detectChanges();
-        }
-      });
-  }
-
-  // =========================
-  // Product Reviews
-  // =========================
-
-  loadReviews(productId: string): void {
-    this.reviewLoading = true;
-    this.reviewError = '';
-
-    this.reviewsSubscription?.unsubscribe();
-
-    this.reviewsSubscription = this.http
-      .get<any>(
-        `${this.apiUrl}/${encodeURIComponent(productId)}/reviews`
-      )
-      .subscribe({
-        next: response => {
-          const result = response?.data || response;
-
-          this.reviews = Array.isArray(result?.reviews)
-            ? result.reviews
-            : [];
-
-          this.averageRating = Number(
-            result?.average_rating ?? 0
-          );
-
-          this.reviewCount = Number(
-            result?.review_count ?? this.reviews.length
-          );
-
-          // If customer already reviewed this product,
-          // load their existing review into the form.
-          const existingReview = this.myReview;
-
-          if (existingReview) {
-            this.reviewRating = Number(existingReview.rating);
-            this.reviewComment = existingReview.comment || '';
-          }
-
-          this.reviewLoading = false;
-          this.cdr.detectChanges();
-        },
-
-        error: error => {
-          this.reviews = [];
-          this.averageRating = 0;
-          this.reviewCount = 0;
-          this.reviewLoading = false;
-
-          this.reviewError =
-            error?.status === 404
-              ? 'Reviews API abhi backend mein available nahi hai.'
-              : 'Reviews load nahi ho sake. Please try again.';
-
-          this.cdr.detectChanges();
-        }
-      });
-  }
-
-  setReviewRating(rating: number): void {
-    if (rating < 1 || rating > 5) return;
-
-    this.reviewRating = rating;
-    this.reviewSubmitError = '';
-  }
-
-  submitReview(): void {
-    this.loadCurrentUser();
-
-    if (!this.isLoggedIn) {
-      this.reviewSubmitError = 'Please login before submitting a review.';
-      return;
-    }
-
-    if (!this.product) {
-      this.reviewSubmitError = 'Product not found.';
-      return;
-    }
-
-    if (
-      !Number.isInteger(this.reviewRating) ||
-      this.reviewRating < 1 ||
-      this.reviewRating > 5
+    if (Array.isArray(rawImages)) {
+      values = rawImages;
+    } else if (
+      typeof rawImages === 'string' &&
+      rawImages.trim()
     ) {
-      this.reviewSubmitError = 'Please select a rating from 1 to 5 stars.';
-      return;
-    }
-
-    if (this.reviewComment.trim().length > 2000) {
-      this.reviewSubmitError = 'Comment must be 2000 characters or fewer.';
-      return;
-    }
-
-    const token = localStorage.getItem('hafiz_gas_token');
-
-    if (!token) {
-      this.reviewSubmitError = 'Login session not found. Please login again.';
-      return;
-    }
-
-    const payload = {
-      rating: this.reviewRating,
-      comment: this.reviewComment.trim()
-    };
-
-    this.submittingReview = true;
-    this.reviewSubmitError = '';
-    this.reviewSuccess = '';
-
-    this.submitReviewSubscription?.unsubscribe();
-
-    this.submitReviewSubscription = this.http
-      .post<any>(
-        `${this.apiUrl}/${encodeURIComponent(String(this.product.id))}/reviews`,
-        payload,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      )
-      .subscribe({
-        next: response => {
-          this.submittingReview = false;
-          this.reviewSuccess =
-            response?.message || 'Your review has been saved successfully.';
-
-          this.loadReviews(String(this.product!.id));
-          this.cdr.detectChanges();
-        },
-
-        error: error => {
-          this.submittingReview = false;
-
-          this.reviewSubmitError =
-            error?.error?.error ||
-            error?.error?.message ||
-            'Review submit nahi ho saka. Please try again.';
-
-          this.cdr.detectChanges();
-        }
-      });
-  }
-
-  deleteReview(review: ProductReview): void {
-    this.loadCurrentUser();
-
-    if (!this.canDeleteReview(review)) {
-      this.reviewSubmitError = 'You are not allowed to delete this review.';
-      return;
-    }
-
-    if (!this.product) return;
-
-    const confirmed = confirm(
-      'Are you sure you want to delete this review?'
-    );
-
-    if (!confirmed) return;
-
-    const token = localStorage.getItem('hafiz_gas_token');
-
-    if (!token) {
-      this.reviewSubmitError = 'Please login again.';
-      return;
-    }
-
-    this.deletingReviewId = review.id;
-    this.reviewSubmitError = '';
-
-    this.deleteReviewSubscription?.unsubscribe();
-
-    this.deleteReviewSubscription = this.http
-      .delete<any>(
-        `${this.apiUrl}/${encodeURIComponent(String(this.product.id))}/reviews/${encodeURIComponent(String(review.id))}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      )
-      .subscribe({
-        next: () => {
-          this.deletingReviewId = null;
-
-          if (
-            String(review.user_id) === String(this.currentUser?.id)
-          ) {
-            this.reviewRating = 5;
-            this.reviewComment = '';
-          }
-
-          this.reviewSuccess = 'Review deleted successfully.';
-
-          this.loadReviews(String(this.product!.id));
-          this.cdr.detectChanges();
-        },
-
-        error: error => {
-          this.deletingReviewId = null;
-
-          this.reviewSubmitError =
-            error?.error?.error ||
-            error?.error?.message ||
-            'Review delete nahi ho saka. Please try again.';
-
-          this.cdr.detectChanges();
-        }
-      });
-  }
-
-  // Images
-  private prepareImages(product: Product): void {
-    let paths: string[] = [];
-
-    if (Array.isArray(product.images)) {
-      paths = product.images;
-    } else if (typeof product.images === 'string') {
       try {
-        paths = JSON.parse(product.images);
+        const parsed = JSON.parse(rawImages);
+
+        if (Array.isArray(parsed)) {
+          values = parsed;
+        } else {
+          values = [rawImages];
+        }
       } catch {
-        paths = [product.images];
+        values = [rawImages];
       }
     }
 
-    const mainImage = product.image_url || product.imageUrl || '';
+    const cleaned = values
+      .filter(
+        (value): value is string =>
+          typeof value === 'string' && !!value.trim()
+      )
+      .map(value => this.imageUrl(value));
 
-    if (mainImage && !paths.includes(mainImage)) {
-      paths.unshift(mainImage);
+    if (!cleaned.length && fallback) {
+      cleaned.push(this.imageUrl(fallback));
     }
 
-    this.images = paths
-      .filter(Boolean)
-      .map(path => this.imageUrl(path));
-
-    this.selectedImage = this.images[0] || '';
+    return [...new Set(cleaned)];
   }
 
-  imageUrl(path?: string): string {
-    if (!path) return '';
+  imageUrl(value: string): string {
+    if (!value) return '';
 
-    if (path.startsWith('http')) return path;
+    if (/^https?:\/\//i.test(value)) {
+      return value;
+    }
 
-    return `${this.serverUrl}${path.startsWith('/') ? '' : '/'}${path}`;
+    return `${this.serverUrl}${value.startsWith('/') ? '' : '/'}${value}`;
   }
 
-  relatedImage(product: Product): string {
-    return this.imageUrl(
-      product.image_url || product.imageUrl || ''
+  private buildOptionGroups(
+    options: ProductOption[]
+  ): void {
+    const groups = new Map<string, ProductOption[]>();
+
+    for (const option of options) {
+      const name = String(option.option_group || '').trim();
+
+      if (!name) continue;
+
+      if (!groups.has(name)) {
+        groups.set(name, []);
+      }
+
+      groups.get(name)!.push(option);
+    }
+
+    this.optionGroups = Array.from(
+      groups,
+      ([name, groupOptions]) => ({
+        name,
+        options: groupOptions
+      })
     );
+
+    this.selectedOptions = {};
+
+    for (const group of this.optionGroups) {
+      if (group.options.length) {
+        this.selectedOptions[group.name] = group.options[0];
+      }
+    }
   }
 
-  relatedPrice(product: Product): number {
-    return Number(product.price ?? 0);
-  }
+  onOptionChange(
+    groupName: string,
+    optionId: string
+  ): void {
+    const group = this.optionGroups.find(
+      item => item.name === groupName
+    );
 
-  // Product Options
-  private setDefaultSelections(): void {
-    this.selectedColor = this.colors[0]?.option_value ?? '';
-    this.selectedSize = this.sizes[0]?.option_value ?? '';
-    this.selectedGasType = this.gasTypes[0]?.option_value ?? '';
-    this.quantity = 1;
-  }
+    const option = group?.options.find(
+      item => String(item.id) === String(optionId)
+    );
 
-  selectColor(colorVal: string): void {
-    this.selectedColor = colorVal;
-  }
+    if (option) {
+      this.selectedOptions = {
+        ...this.selectedOptions,
+        [groupName]: option
+      };
 
-  selectSize(sizeVal: string): void {
-    this.selectedSize = sizeVal;
-  }
-
-  selectGasType(gasVal: string): void {
-    this.selectedGasType = gasVal;
-  }
-
-  increaseQty(): void {
-    this.quantity++;
-  }
-
-  decreaseQty(): void {
-    if (this.quantity > 1) {
-      this.quantity--;
+      this.cartMessage = '';
     }
   }
 
@@ -640,73 +278,255 @@ export class ProductDetails implements OnInit, OnDestroy {
     this.selectedImage = image;
   }
 
-  // Cart
   addToCart(): void {
-    if (!this.product) {
-      alert('Product available nahi hai.');
+    if (
+      !this.product ||
+      !this.hasStock ||
+      this.addingToCart
+    ) {
       return;
     }
 
-    if (this.isOutOfStock) {
-      alert('Sorry, this product is currently out of stock.');
-      return;
+    const selected: Record<string, string> = {};
+
+    for (
+      const [group, option]
+      of Object.entries(this.selectedOptions)
+    ) {
+      selected[group.toLowerCase()] = option.option_value;
     }
 
     const item: CartItem = {
-      id: `${this.product.id}-${this.selectedColor}-${this.selectedSize}-${this.selectedGasType}`,
+      id: `${this.product.id}-${Date.now()}`,
       productId: this.product.id,
-      name: this.productName,
-      image:
-        this.images[0] ||
-        this.imageUrl(
-          this.product.image_url || this.product.imageUrl || ''
-        ),
-      price: this.unitPrice,
-      quantity: this.quantity,
-      color: this.selectedColor,
-      size: this.selectedSize,
-      gasType: this.selectedGasType
+      name: this.product.title,
+      image: this.selectedImage ||
+        this.imageUrl(this.product.image_url || ''),
+      price: this.finalPrice,
+      quantity: 1,
+      color: selected['color'],
+      size: selected['size'],
+      gasType: selected['gas type']
     };
 
-    this.cartServices.addToCart(item);
-    this.showSuccessToast();
+    this.addingToCart = true;
+
+    this.cartService.addToCart(item);
+
+    this.cartMessage = 'Product added to cart.';
+    this.addingToCart = false;
   }
 
-  buyNow(): void {
-    if (!this.product) {
-      alert('Product available nahi hai.');
+  private loadRelatedProducts(
+    currentId: string
+  ): void {
+    this.http.get<any>(this.apiUrl).subscribe({
+      next: response => {
+        const rows = Array.isArray(response?.data)
+          ? response.data
+          : Array.isArray(response?.products)
+            ? response.products
+            : Array.isArray(response)
+              ? response
+              : [];
+
+        this.relatedProducts = rows
+          .filter(
+            (item: Product) =>
+              String(item.id) !== currentId
+          )
+          .slice(0, 4)
+          .map((item: Product) => ({
+            ...item,
+            images: this.parseImages(
+              item.images,
+              item.image_url
+            )
+          }));
+      },
+
+      error: error => {
+        console.error(
+          'Unable to load related products:',
+          error
+        );
+
+        this.relatedProducts = [];
+      }
+    });
+  }
+
+  relatedImage(product: Product): string {
+    const images = Array.isArray(product.images)
+      ? product.images
+      : [];
+
+    return images[0] ||
+      (
+        product.image_url
+          ? this.imageUrl(product.image_url)
+          : ''
+      );
+  }
+
+  openRelatedProduct(
+    id: number | string
+  ): void {
+    this.router.navigate(['/product-details', id]);
+
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  }
+
+  private loadReviews(productId: string): void {
+    this.reviewLoading = true;
+
+    this.http.get<any>(
+      `${this.apiUrl}/${productId}/reviews`
+    ).subscribe({
+      next: response => {
+        const payload = response?.data ?? response;
+
+        this.reviews = Array.isArray(payload?.reviews)
+          ? payload.reviews
+          : Array.isArray(payload)
+            ? payload
+            : Array.isArray(this.product?.reviews)
+              ? this.product!.reviews!
+              : [];
+
+        const average =
+          payload?.average_rating ??
+          this.product?.average_rating;
+
+        this.averageRating = Number(average || 0);
+
+        this.reviewCount = Number(
+          payload?.review_count ?? this.reviews.length
+        );
+
+        this.reviewLoading = false;
+      },
+
+      error: error => {
+        console.error(
+          'Unable to load reviews:',
+          error
+        );
+
+        this.reviews = Array.isArray(this.product?.reviews)
+          ? this.product!.reviews!
+          : [];
+
+        this.reviewCount = this.reviews.length;
+
+        this.averageRating = Number(
+          this.product?.average_rating || 0
+        );
+
+        this.reviewLoading = false;
+      }
+    });
+  }
+
+  setReviewRating(rating: number): void {
+    this.reviewRating = rating;
+  }
+
+  submitReview(): void {
+    if (
+      !this.product ||
+      !this.isLoggedIn ||
+      this.submittingReview
+    ) {
       return;
     }
 
-    if (this.isOutOfStock) {
-      alert('Sorry, this product is currently out of stock.');
+    const comment = this.reviewComment.trim();
+
+    if (!comment) {
+      this.reviewSubmitError = 'Please write your review.';
       return;
     }
 
-    this.addToCart();
-    this.router.navigate(['/checkout']);
+    this.submittingReview = true;
+    this.reviewSubmitError = '';
+    this.reviewSuccess = '';
+
+    const token = localStorage.getItem('hafiz_gas_token');
+
+    this.http.post<any>(
+      `${this.apiUrl}/${this.product.id}/reviews`,
+      {
+        rating: this.reviewRating,
+        comment
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    ).subscribe({
+      next: () => {
+        this.reviewComment = '';
+        this.reviewRating = 5;
+
+        this.reviewSuccess =
+          'Your review has been submitted.';
+
+        this.submittingReview = false;
+
+        this.loadReviews(String(this.product!.id));
+      },
+
+      error: error => {
+        console.error(
+          'Unable to submit review:',
+          error
+        );
+
+        this.reviewSubmitError =
+          error?.error?.message ||
+          'Unable to submit your review. You may have already reviewed this product.';
+
+        this.submittingReview = false;
+      }
+    });
   }
 
-  formatPrice(value: number): string {
-    return value.toLocaleString('en-PK');
+  goToLogin(): void {
+    this.router.navigate(
+      ['/login'],
+      {
+        queryParams: {
+          returnUrl: this.router.url
+        }
+      }
+    );
   }
 
-  // Cart Toast
-  showCartToast = false;
-  cartToastMessage = 'Product added to cart successfully!';
+  formatDate(value: string): string {
+    if (!value) return '';
 
-  private toastTimer?: ReturnType<typeof setTimeout>;
+    const date = new Date(value);
 
-  private showSuccessToast(): void {
-    this.cartToastMessage = 'Product added to cart successfully!';
-    this.showCartToast = true;
+    return Number.isNaN(date.getTime())
+      ? value
+      : date.toLocaleDateString(
+          'en-PK',
+          {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric'
+          }
+        );
+  }
 
-    if (this.toastTimer) {
-      clearTimeout(this.toastTimer);
-    }
-
-    this.toastTimer = setTimeout(() => {
-      this.showCartToast = false;
-    }, 3000);
+  ratingStars(rating: number): number[] {
+    return this.stars.filter(
+      star => star <= Math.round(Number(rating || 0))
+    );
   }
 }

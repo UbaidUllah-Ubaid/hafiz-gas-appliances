@@ -1,9 +1,21 @@
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { Component, OnInit, inject } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  inject,
+  ChangeDetectorRef
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { CartItem, CartServices } from '../cart/cartServices/cart-services';
+import {
+  ActivatedRoute,
+  Router,
+  RouterModule
+} from '@angular/router';
+import {
+  CartItem,
+  CartServices
+} from '../cart/cartServices/cart-services';
 
 interface ProductOption {
   id: number;
@@ -58,6 +70,7 @@ export class ProductDetails implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly cartService = inject(CartServices);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   product: Product | null = null;
   relatedProducts: Product[] = [];
@@ -113,6 +126,7 @@ export class ProductDetails implements OnInit {
       } else {
         this.loading = false;
         this.pageError = 'Product ID was not found.';
+        this.cdr.markForCheck();
       }
     });
   }
@@ -135,6 +149,7 @@ export class ProductDetails implements OnInit {
           this.product = null;
           this.pageError = 'Product not found.';
           this.loading = false;
+          this.cdr.markForCheck();
           return;
         }
 
@@ -155,6 +170,7 @@ export class ProductDetails implements OnInit {
         this.loadRelatedProducts(String(data.id));
 
         this.loading = false;
+        this.cdr.markForCheck();
       },
 
       error: error => {
@@ -165,6 +181,7 @@ export class ProductDetails implements OnInit {
           : 'Unable to load this product. Please try again.';
 
         this.loading = false;
+        this.cdr.markForCheck();
       }
     });
   }
@@ -343,6 +360,8 @@ export class ProductDetails implements OnInit {
               item.image_url
             )
           }));
+
+        this.cdr.markForCheck();
       },
 
       error: error => {
@@ -352,6 +371,7 @@ export class ProductDetails implements OnInit {
         );
 
         this.relatedProducts = [];
+        this.cdr.markForCheck();
       }
     });
   }
@@ -408,6 +428,7 @@ export class ProductDetails implements OnInit {
         );
 
         this.reviewLoading = false;
+        this.cdr.markForCheck();
       },
 
       error: error => {
@@ -427,6 +448,7 @@ export class ProductDetails implements OnInit {
         );
 
         this.reviewLoading = false;
+        this.cdr.markForCheck();
       }
     });
   }
@@ -477,6 +499,7 @@ export class ProductDetails implements OnInit {
           'Your review has been submitted.';
 
         this.submittingReview = false;
+        this.cdr.markForCheck();
 
         this.loadReviews(String(this.product!.id));
       },
@@ -492,6 +515,7 @@ export class ProductDetails implements OnInit {
           'Unable to submit your review. You may have already reviewed this product.';
 
         this.submittingReview = false;
+        this.cdr.markForCheck();
       }
     });
   }
